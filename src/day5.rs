@@ -3,51 +3,77 @@ use std::process;
 const FLOOR_SIZE: usize = 1000;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-struct Coord(i16, i16);
-impl Coord {
+struct Point(i16, i16);
+impl Point {
     fn from_str(s: &str) -> Result<Self, ()> {
         let coordinates = s.split(",")
             .map(|slice| slice.trim().parse::<i16>().map_err(|_| ()))
             .collect::<Result<Vec<_>, ()>>()?;
         if coordinates.len() != 2 { return Err(()); }
-        Ok(Coord(coordinates[0], coordinates[1]))
+        Ok(Point(coordinates[0], coordinates[1]))
+    }
+    fn flip(&mut self) {
+        std::mem::swap(&mut self.0, &mut self.1);
     }
 }
-impl std::ops::Add<Coord> for Coord {
-    type Output = Coord;
-    fn add(self, rhs: Coord) -> Coord {
-        Coord(self.0 + rhs.0, self.1 + rhs.1)
+impl std::ops::Add<Point> for Point {
+    type Output = Point;
+    fn add(self, rhs: Point) -> Point {
+        Point(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
-impl std::ops::Sub<Coord> for Coord {
-    type Output = Coord;
-    fn sub(self, rhs: Coord) -> Coord {
-        Coord(self.0 - rhs.0, self.1 - rhs.1)
+impl std::ops::Sub<Point> for Point {
+    type Output = Point;
+    fn sub(self, rhs: Point) -> Point {
+        Point(self.0 - rhs.0, self.1 - rhs.1)
     }
 }
 
-#[derive(Debug)]
-struct LineCoordIterator {
-    current: Coord, end: Coord, delta: Coord
-}
-impl LineCoordIterator {
-    fn new(start: Coord, end: Coord) -> Result<Self, ()> {
-        let mut delta = end - start;
-        if (delta.0 != 0) && (delta.1 != 0) && (delta.0.abs() != delta.1.abs()) {
-            return Err(());
-        }
-        if delta.0 != 0 { delta.0 = delta.0 / delta.0.abs(); }
-        if delta.1 != 0 { delta.1 = delta.1 / delta.1.abs(); }
-        Ok(LineCoordIterator { current: start-delta, end: end, delta: delta })
+fn rasterize_line_seg(mut start: Point, mut end: Point) -> Vec<Point> {
+    let mut delta = end - start;
+    let mut flipped = false;
+
+    // if abs(slope) is larger than 1, flip axis to make it <= 1
+    if delta.1.abs() > delta.0.abs() {
+        flipped = true;
+        delta.flip();
+        start.flip();
+        end.flip();
     }
-}
-impl Iterator for LineCoordIterator {
-    type Item = Coord;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current == self.end { return None; }
-        self.current = self.current + self.delta;
-        Some(self.current)
+
+    // ensure first coordinate ascending from start to end (iterator must be ascending)
+    if start.0 > end.0 {
+        delta.0 *= -1;
+        delta.1 *= -1;
+        std::mem::swap(&mut start, &mut end);
     }
+    let points = start.0..=end.0;
+
+    // Bresenham's Line Algorithm
+    // Intuition:
+    // The exact value of the y component, yi, increases by Dy/Dx each time. Since we ensured the slope <= 1,
+    // we only need to determine whether the y coordinate will increment (by Dy.signum()) or stay the same at
+    // each step (a step means moving to the next x coordinate), which boils down to asking if
+    // (yi - current y coordinate) >= 0.5. The algorithm optimizes this process by only using integer arithmetic.
+    // Let (yi - current y coordinate) = p/Dx, then p/Dx >= 0.5 <=> diff = 2p-Dx >= 0
+    // 1. p always starts and ends at 0, since the endpoints have integer coordinates
+    // 2. p increments by Dy each step
+    // 3. To get only the fractional part of yi, decrement p by Dx each time the y coordinate increments
+    // Example: (0, 0) -> (5, 2), (try relating diff to y at each step for more intuition)
+    // [y=0,(0, 0)], [y=2/5,(1, 0)], [y=4/5,(2, 1)], [y=6/5,(3, 1)], [y=8/5,(4, 2)], [y=2,(5, 2)]
+    let mut points = points
+        .scan((-delta.0, start.1), |(diff, y), x| {
+            if *diff >= 0 {
+                *y += delta.1.signum();
+                *diff -= 2*delta.0;
+            }
+            *diff += 2*delta.1.abs();   // calculate diff for next point
+            Some(Point(x, *y))
+        })
+        .collect::<Vec<Point>>();
+
+    if flipped { points.iter_mut().for_each(Point::flip); } // if axis flipped, revert to normal
+    points
 }
 
 #[derive(Debug)]
@@ -57,14 +83,13 @@ impl FloorMap {
         FloorMap(Box::new([[0; FLOOR_SIZE]; FLOOR_SIZE]))
     }
 
-    fn add_line_part1(&mut self, start: Coord, end: Coord) -> bool {
+    fn add_line_part1(&mut self, start: Point, end: Point) -> bool {
         // horizontal line
         if start.1 == end.1 {
             let x_iter = match end.0 > start.0 {
                 true => start.0..=end.0,
                 false => end.0..=start.0
             };
-            println!("{:?} -> {:?}: {:?}", start, end, x_iter.clone());
             for x in x_iter {
                 self.0[start.1 as usize][x as usize] += 1;
             }
@@ -76,7 +101,6 @@ impl FloorMap {
                 true => start.1..=end.1,
                 false => end.1..=start.1
             };
-            println!("{:?} -> {:?}: {:?}", start, end, y_iter.clone());
             for y in y_iter {
                 self.0[y as usize][start.0 as usize] += 1;
             }
@@ -85,12 +109,13 @@ impl FloorMap {
         false
     }
 
-    fn add_line_part2(&mut self, start: Coord, end: Coord) -> bool {
-        let line_coordinates = match LineCoordIterator::new(start, end) {
-            Err(_) => return false,
-            Ok(x) => x
-        };
-        for Coord(x, y) in line_coordinates {
+    fn add_line_part2(&mut self, start: Point, end: Point) -> bool {
+        // let line_coordinates = match LineCoordIterator::new(start, end) {
+        //     Err(_) => return false,
+        //     Ok(x) => x
+        // };
+        let line_coordinates = rasterize_line_seg(start, end);
+        for Point(x, y) in line_coordinates {
             self.0[y as usize][x as usize] += 1;
         }
         true
@@ -108,9 +133,9 @@ pub fn day5_main(file_data: &str) -> (u16, u16) {
     // Part 1
     let mut floor_map = FloorMap::new();
     for (i, line) in file_data.lines().enumerate() {
-        let mut coordinates = line.split(" -> ")
-            .map(Coord::from_str)
-            .collect::<Result<Vec<Coord>, ()>>()
+        let coordinates = line.split(" -> ")
+            .map(Point::from_str)
+            .collect::<Result<Vec<Point>, ()>>()
             .unwrap_or_else(|_| {
                 eprintln!("Error parsing coordinates on line {}!", i+1);
                 process::exit(1);
@@ -119,9 +144,7 @@ pub fn day5_main(file_data: &str) -> (u16, u16) {
             eprintln!("Invalid number of tokens in line {}!", i+1);
             process::exit(1);
         }
-        let end = coordinates.pop().unwrap();
-        let start = coordinates.pop().unwrap();
-        if !floor_map.add_line_part1(start, end) {
+        if !floor_map.add_line_part1(coordinates[0], coordinates[1]) {
             println!("[Part 1] The vent coordinates on line {} was ignored!", i+1);
         }
     }
@@ -132,9 +155,9 @@ pub fn day5_main(file_data: &str) -> (u16, u16) {
     // Part 2
     let mut floor_map = FloorMap::new();
     for (i, line) in file_data.lines().enumerate() {
-        let mut coordinates = line.split(" -> ")
-            .map(Coord::from_str)
-            .collect::<Result<Vec<Coord>, ()>>()
+        let coordinates = line.split(" -> ")
+            .map(Point::from_str)
+            .collect::<Result<Vec<Point>, ()>>()
             .unwrap_or_else(|_| {
                 eprintln!("Error parsing coordinates on line {}!", i+1);
                 process::exit(1);
@@ -143,9 +166,7 @@ pub fn day5_main(file_data: &str) -> (u16, u16) {
             eprintln!("Invalid number of tokens in line {}!", i+1);
             process::exit(1);
         }
-        let end = coordinates.pop().unwrap();
-        let start = coordinates.pop().unwrap();
-        if !floor_map.add_line_part2(start, end) {
+        if !floor_map.add_line_part2(coordinates[0], coordinates[1]) {
             eprintln!("Unable to map the vent coordinates on line {}!", i+1);
             eprintln!("The coordinates must form a horizontal, vertical or 45 degree line.");
             process::exit(1);
