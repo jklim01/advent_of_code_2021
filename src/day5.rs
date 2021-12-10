@@ -50,17 +50,6 @@ fn rasterize_line_seg(mut start: Point, mut end: Point) -> Vec<Point> {
     let points = start.0..=end.0;
 
     // Bresenham's Line Algorithm
-    // Intuition:
-    // The exact value of the y component, yi, increases by Dy/Dx each time. Since we ensured the slope <= 1,
-    // we only need to determine whether the y coordinate will increment (by Dy.signum()) or stay the same at
-    // each step (a step means moving to the next x coordinate), which boils down to asking if
-    // (yi - current y coordinate) >= 0.5. The algorithm optimizes this process by only using integer arithmetic.
-    // Let (yi - current y coordinate) = p/Dx, then p/Dx >= 0.5 <=> diff = 2p-Dx >= 0
-    // 1. p always starts and ends at 0, since the endpoints have integer coordinates
-    // 2. p increments by Dy each step
-    // 3. To get only the fractional part of yi, decrement p by Dx each time the y coordinate increments
-    // Example: (0, 0) -> (5, 2), (try relating diff to y at each step for more intuition)
-    // [y=0,(0, 0)], [y=2/5,(1, 0)], [y=4/5,(2, 1)], [y=6/5,(3, 1)], [y=8/5,(4, 2)], [y=2,(5, 2)]
     let mut points = points
         .scan((-delta.0, start.1), |(diff, y), x| {
             if *diff >= 0 {
