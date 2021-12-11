@@ -4,13 +4,27 @@ My attempt of Advent of Code 2021. I'm also using this oppurtunity to pick up Ru
 Hope to get 50 stars by the 25th :P.
 
 
+
 # Highlights
-## Day 1:
+Basically a record of any cool or important things I learnt about Rust, and any algorithms or derivations that I found or discovered myself along the way.
+
+
+## Table of Contents
+  - [Day 1](#day-1)
+  - [Day 3](#day-3)
+  - [Day 4](#day-4)
+  - [Day 5](#day-5)
+  - [Day 6](#day-6)
+  - [Day 7](#day-7)
+
+
+
+## Day 1
 1. Self-implemented Iterators
 
 
 
-## Day 3:
+## Day 3
 1. `ok_or_else`
     - maps `Option<T>` to `Result<T, E>` by:
         - Some(T) |-> Ok(T)
@@ -23,7 +37,7 @@ Hope to get 50 stars by the 25th :P.
 
 
 
-## Day 4:
+## Day 4
 1. mutate collections in place by chaining `iter_mut` and `for_each`
 
 2. `map_err`
@@ -33,7 +47,7 @@ Hope to get 50 stars by the 25th :P.
 
 
 
-## Day 5:
+## Day 5
 1. Operator Overloading
 
 2. Apperantly, you can only create range iterators using `..` or `..=` if it is ascending. Otherwise, the iterator stops after the first element. :cry: This can be combated by testing if it is ascending and returning the correct version using `match`.
@@ -68,7 +82,7 @@ Hope to get 50 stars by the 25th :P.
 
 
 
-## Day 5:
+## Day 6
 1. `append` appends another vector to the end of the current vector
 
 2. `extend_from_slice` can do the same with a vector slice, while `extend` (currently nightly-only) can extend with elements of an iterator
@@ -79,30 +93,39 @@ Hope to get 50 stars by the 25th :P.
 
 
 
-## Day 7:
+## Day 7
 1. Part 1: Minimize `f(x) = Σ |x - x`<sub>i</sub>`|`
-    - By the linearity of the derivative and observing the graph of the absolute value function, it can be thought that each crab contributes a value of `-1` and `1` to the slope of f to its left and right. `f` is continuous (by the sum of continuous functions) and linear between the kinks at points where there are crabs.
+    - By the linearity of the derivative and observing the graph of the absolute value function, it can be thought that each crab contributes a value of `-1` and `1` to the slope of f to its left and right. Thus, `f` is continuous (sum of continuous functions) and linear between the kinks at points where there are crabs.
 
-    - This trend of the slope tells us that `f` always increases as we move away from the "minimum zone", which occurs where the slope changes sign or is zero (same number of crabs to the left and right). This zone always contains the median, and where the latter case exists, can even be a closed interval (which looks like `\_/`, otherwise it is just a kink where the slope directly changes from positive to negative, which looks like `\/`).
+    - This tells us that `f` always increases as we move away from the "minimum zone", which occurs where the slope changes sign or is zero. Where the latter case exists, the minimum zone is a closed interval (which looks like `\_/`. Otherwise it is just a kink where the slope directly changes from positive to negative ( which looks like `\/`). It can be seen that this zone always contains the median.
 
-    - tldr: Use a hashmap to store the the number of crabs at each position. Iterating from the smallest to largest position, the minimum zone starts and ends where the sum of the values at the keys that have been visited changes sign (for convenience, let's say the sign could be one of `{+ve, 0, -ve}`).
+    - tldr: Use a BTreeMap to store the the number of crabs at each position. Iterating from the smallest to largest position, given that `P` crabs have been seen (including the current position), the slope of f to the right of the current position is `2P-n`. The minimum zone starts from the first non-negative value found and ends at the first positive value found.
 
 2. Part 2: Minimize `f(x) = Σ(x - x`<sub>i</sub>`)`<sup>2</sup>` + Σ|x - x`<sub>i</sub>`|`
-    - Using  `y`<sup>2</sup>` ≫ y` approximation, the solution will be the mean. However, I don't like to live that dangerously :zany_face:, so let's have a closer look.
+    - Using  `x`<sup>2</sup>` ≫ x` approximation, the solution will be the mean. However, I don't like to live that dangerously :zany_face:, so let's have a closer look.
 
-    - Lucky for us, the first term is smooth (quadratic), while the second term is the same as in part 1. The expression might look too complex to derive an efficient algorithm, but as we will soon see, the quadratic term actually makes things even nicer! Again, since we are restricted to integer points, we will search within an interval bounded by points where the slope changes sign.
+    - Lucky for us, the first term is smooth (quadratic), while the second term is the same as in part 1. Again, since we are restricted to integer points and `f` is continuous, we will start by searching for points where the slope changes sign (for convenience, let's say sign is `+ve`, `0` or `-ve`).
 
     - Using calculus and knowledge from part 1, we can show the following:
-        > Denote `S = Σ x`<sub>i</sub>, and `M` as the mean position. Given a point `x` with `K` crabs, and `L` crabs to its left,  <br/>
-        > `f'(x)`<sup>-</sup>` = 2nx - 2S + 2L-n` <br/>
-        > `f'(x)`<sup>+</sup>` = 2nx - 2S + 2(L+K)-n` <br/>
+        > Denote `S = Σ x`<sub>i</sub>, and `M` as the mean position. Given a point `x` with `K(x)` crabs, and `L(x)` crabs to its left,  <br/>
+        > `f'(x)`<sup>-</sup>` = 2nx - 2S + 2L(x)-n` <br/>
+        > `f'(x)`<sup>+</sup>` = 2nx - 2S + 2[L(x)+K(x)]-n` <br/>
 
-    - Thus, the interval of interest is `[ max(x`<sub>1</sub>`),  min(x`<sub>2</sub>`) ]`, where:
-        1. `x`<sub>1</sub>` ∈ Region of -ve slope = { x | x < M + 0.5 - L`<sub>1</sub>`/n }`
-        2. `x`<sub>2</sub>` ∈ Region of +ve slope = { x | x > M + 0.5 - (L`<sub>2</sub>`+K`<sub>2</sub>`)/n }`
+    - Thus, the interval of interest is `I = [ supremum(X`<sub>1</sub>`),  infimum(X`<sub>2</sub>`) ]` (and yes I had to search for these 2 words), where:
+        1. `X`<sub>1</sub>` = Region of -ve slope = { x | x < M + 0.5 - L(x)/n }`
+        2. `X`<sub>2</sub>` = Region of +ve slope = { x | x > M + 0.5 - [L(x)+K(x)]/n }`
 
-        But we know that for any point,  `0 ≤ L ≤ (L+K) ≤ n`. Furthermore, by the continuity of `f` and the fact that its slope is a monotonically increasing function outside the interval, we are guaranteed that all points outside the interval will be larger than any point inside it. This leaves us with all integer points within `[ ⌈ M - 0.5 ⌉,  ⌊ M + 0.5 ⌋ ]`. Finally, it is not hard to convince yourself that actually, `⌈ M ⌉` and `⌊ M ⌋` are the only integers that could be within this interval, and that I have wasted a whole day thinking about this :rofl:.
+        By the continuity of `f` and the fact that its slope is an increasing function outside `I` (ignoring points where it is undefined), it is guaranteed that `f` increases as we move away from the edges of `I`.
 
-        One very interesting thing to note, is that contrary to how complex `f` looks, the solution is very simple. This is due to the presence of the `x` term in the slope formula contributed by the quadratic, which allows us to apply the bounds and remove `L` and `K`, which are point dependent (meaning that we will have to iterate through the points to find the ones that satisfies our criteria), from the equation (HAHA).
+        Furthermore, We know that for any point `x`,  `0 ≤ L(x) ≤ L(x)+K(x) ≤ n`, which tells us that the `I` is contained within `[ M - 0.5 , M + 0.5 ]`, where `M` is the mean position. Thus, the only 3 possible cases and their handling methods are:
+        1. `I` contains 0 integer points: only check the two integer points closest to each end of the interval
+        2. `I` contains 1 integer point: this is the only integer argmin
+        3. `I` contains 2 integer points: both are the only integer argmin
 
-    - tldr: the minimum ALWAYS occurs at `round(mean({x`<sub>i</sub>`}))`
+        Finally, it is not hard to convince yourself that checking `⌈ M ⌉`, `⌊ M ⌋` and the next closest integer to `M` is sufficient to cover all cases, and that I have wasted a whole day thinking about this :rofl:.
+
+    - tldr: check the positions `M.round() - 1`, `M.round()`, `M.round() + 1`
+
+3. Use `entry(key).or_insert(default_val)` to either get ref to the existing value at the key, or insert the key paired with the specified default value and get its value ref.
+   - convenient when when using hashmap to count key occurences, example:
+    > `map.entry(some_key).or_insert(0) += 1`
