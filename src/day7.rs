@@ -3,10 +3,20 @@ use std::cmp::Ordering;
 
 type CrabPos = u16;
 
+#[inline]
+fn fuel_formula_p1(distance: CrabPos) -> u32 {
+    distance as u32
+}
+#[inline]
+fn fuel_formula_p2(distance: CrabPos) -> u32 {
+    (distance as u32 * (distance + 1) as u32) / 2
+}
 fn find_ideal_alignment(all_pos: &[CrabPos], min_max_pos: (CrabPos, CrabPos),
-    fuel_calculator: fn(CrabPos) -> u32) -> (CrabPos, u32) {
+    fuel_calculator: fn(CrabPos) -> u32) -> Option<(CrabPos, u32)> {
+    if all_pos.is_empty() { return None; }
     let mut min_fuel = u32::MAX;
     let mut ideal_pos = 0;
+
     for i in min_max_pos.0..min_max_pos.1 {
         let current = all_pos.iter().fold(0, |acc, pos| {
             let abs_distance = match *pos > i {
@@ -20,16 +30,7 @@ fn find_ideal_alignment(all_pos: &[CrabPos], min_max_pos: (CrabPos, CrabPos),
             ideal_pos = i;
         }
     }
-    (ideal_pos, min_fuel)
-}
-
-#[inline]
-fn calculate_fuel_p1(distance: CrabPos) -> u32 {
-    distance as u32
-}
-#[inline]
-fn calculate_fuel_p2(distance: CrabPos) -> u32 {
-    (distance as u32 * (distance + 1) as u32) / 2
+    Some((ideal_pos, min_fuel))
 }
 
 struct CrabPositionMap {
@@ -44,13 +45,7 @@ impl CrabPositionMap {
     }
 
     fn add_crabs(&mut self, pos: CrabPos, count: u32) {
-        // *self.pos_map.entry(pos).or_insert(count) += count;
-        if let Some(val_ref) = self.pos_map.get_mut(&pos) {
-            *val_ref += count;
-        }
-        else {
-            self.pos_map.insert(pos, count);
-        }
+        *self.pos_map.entry(pos).or_insert(0) += count;
         self.total += count;
     }
 
@@ -73,7 +68,8 @@ impl CrabPositionMap {
         self.calc_fuel(align_pos, |distance| (distance as u32 * (distance + 1) as u32) / 2)
     }
 
-    fn find_ideal_pos_p1(&self) -> (CrabPos, CrabPos, u32) {
+    fn find_ideal_pos_p1(&self) -> Option<(CrabPos, CrabPos, u32)> {
+        if self.total == 0 { return None; }
         let mut crab_count = 0;
         let mut start = CrabPos::MAX;
         let mut end = 0;
@@ -94,16 +90,22 @@ impl CrabPositionMap {
                 }
             }
         }
-        (start, end, self.calc_fuel_p1(start))
+        Some((start, end, self.calc_fuel_p1(start)))
     }
 
-    fn find_ideal_pos_p2(&self) -> (CrabPos, u32) {
+    fn find_ideal_pos_p2(&self) -> Option<(CrabPos, u32)> {
+        if self.total == 0 { return None; }
         let mean = self.pos_map.iter()
             .fold(0, |acc, (pos, count)| acc + (*pos as u32)*(*count)) as f32
             / self.total as f32;
         let rounded_mean = mean.round() as CrabPos;
-        println!("mean: {}", mean);
-        (rounded_mean, self.calc_fuel_p2(rounded_mean))
+        let candidates = [rounded_mean-1, rounded_mean, rounded_mean+1];
+
+        candidates.iter()
+            .map(|align_pos| (*align_pos, self.calc_fuel_p2(*align_pos)))
+            .min_by(|x, y| {
+                x.1.cmp(&y.1)
+            })
     }
 }
 
@@ -123,10 +125,12 @@ pub fn day7_main(file_data: &str) -> ((CrabPos, u32), (CrabPos, u32)) {
             if *pos > acc.1 { acc.1 = *pos; }
             acc
         });
-    let (ideal_pos_p1, min_fuel_p1) = find_ideal_alignment(
-        &all_positions, min_max_pos, calculate_fuel_p1);
-    let (ideal_pos_p2, min_fuel_p2) = find_ideal_alignment(
-        &all_positions, min_max_pos, calculate_fuel_p2);
+    let (ideal_pos_p1, min_fuel_p1) =
+        find_ideal_alignment(&all_positions, min_max_pos, fuel_formula_p1)
+        .expect("Error finding part 1 answer using method 1!");
+    let (ideal_pos_p2, min_fuel_p2) =
+        find_ideal_alignment(&all_positions, min_max_pos, fuel_formula_p2)
+        .expect("Error finding part 2 answer using method 1!");
 
 
     // Method 2: Optimized by doing some math
@@ -140,8 +144,10 @@ pub fn day7_main(file_data: &str) -> ((CrabPos, u32), (CrabPos, u32)) {
             });
             all_positions.add_crabs(pos, 1);
         });
-    let (p1_min_left, p1_min_right, p1_min_fuel) = all_positions.find_ideal_pos_p1();
-    let (p2_min_pos, p2_min_fuel) = all_positions.find_ideal_pos_p2();
+    let (p1_min_left, p1_min_right, p1_min_fuel) = all_positions.find_ideal_pos_p1()
+        .expect("Error finding part 1 answer using method 2!");
+    let (p2_min_pos, p2_min_fuel) = all_positions.find_ideal_pos_p2()
+        .expect("Error finding part 2 answer using method 2!");
 
 
     // Check if different methods give same result
