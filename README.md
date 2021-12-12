@@ -16,6 +16,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 5](#day-5)
   - [Day 6](#day-6)
   - [Day 7](#day-7)
+  - [Day 8](#day-8)
 
 
 
@@ -33,7 +34,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 2. `collect` into a result or option
     - when applying higher-order functions on iterators, if the `Err` or `None` variant is returned by the closure, it can be "collected" out
-    -  convenient when you want to have an early return from a function, but cannot return because the `Err` or `None` is found inside the closure
+    -  convenient when you want to stop and immediately return from a function, but cannot return because the `Err` or `None` variant is found inside the closure (the process terminates once `Err` is found)
 
 
 
@@ -72,7 +73,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
             1. increment `p` by `Dy.signum()`, and set `(yi)' = (y(i-1))'`
             2. if `D ≥ 0`, decrement `p` by `Dx`, and `(yi)' += by Dy.signum()`
 
-        Even better, instead of keeping track of `p` to calculate `D` at each step, just calculate the initial `D` and applying the relevant changes to `D` at each step
+        Even better, instead of keeping track of `p` to calculate `D` at each step, just calculate the initial `D` and apply the relevant changes to `D` at each step!
 
     - Example: (0, 0) -> (5, 2),
         - `[y=0, (0,0), D=-5] -> [y=2/5, (1,0), D=-5+4=-1] -> [y=4/5, (2,1), D=(-1+4)-10=-7] -> [y=6/5, (3,1), D=-7+4=-3] -> [y=8/5, (4,2), D=(-3+4)-10=-9] -> [y=2, (5,2), D=-9+4=-5]`
@@ -107,17 +108,17 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - Lucky for us, the first term is smooth (quadratic), while the second term is the same as in part 1. Again, since we are restricted to integer points and `f` is continuous, we will start by searching for points where the slope changes sign (for convenience, let's say sign is `+ve`, `0` or `-ve`).
 
     - Using calculus and knowledge from part 1, we can show the following:
-        > Denote `S = Σ x`<sub>i</sub>, and `M` as the mean position. Given a point `x` with `K(x)` crabs, and `L(x)` crabs to its left,  <br/>
+        > Denote `S = Σ x`<sub>i</sub>. Given a point `x` with `K(x)` crabs, and `L(x)` crabs to its left,  <br/>
         > `f'(x)`<sup>-</sup>` = 2nx - 2S + 2L(x)-n` <br/>
         > `f'(x)`<sup>+</sup>` = 2nx - 2S + 2[L(x)+K(x)]-n` <br/>
 
-    - Thus, the interval of interest is `I = [ supremum(X`<sub>1</sub>`),  infimum(X`<sub>2</sub>`) ]` (and yes I had to search for these 2 words), where:
+    - Thus, the interval of interest is `I = [ supremum(X`<sub>1</sub>`),  infimum(X`<sub>2</sub>`) ]` (and yes I had to search for these 2 words), where (`M` is the mean position):
         1. `X`<sub>1</sub>` = Region of -ve slope = { x | x < M + 0.5 - L(x)/n }`
         2. `X`<sub>2</sub>` = Region of +ve slope = { x | x > M + 0.5 - [L(x)+K(x)]/n }`
 
         By the continuity of `f` and the fact that its slope is an increasing function outside `I` (ignoring points where it is undefined), it is guaranteed that `f` increases as we move away from the edges of `I`.
 
-        Furthermore, We know that for any point `x`,  `0 ≤ L(x) ≤ L(x)+K(x) ≤ n`, which tells us that the `I` is contained within `[ M - 0.5 , M + 0.5 ]`, where `M` is the mean position. Thus, the only 3 possible cases and their handling methods are:
+        Furthermore, We know that for any point `x`,  `0 ≤ L(x) ≤ L(x)+K(x) ≤ n`, which tells us that the `I` is contained within `[ M - 0.5 , M + 0.5 ]`. Thus, the only 3 possible cases and their handling methods are:
         1. `I` contains 0 integer points: only check the two integer points closest to each end of the interval
         2. `I` contains 1 integer point: this is the only integer argmin
         3. `I` contains 2 integer points: both are the only integer argmin
@@ -129,3 +130,13 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 3. Use `entry(key).or_insert(default_val)` to either get ref to the existing value at the key, or insert the key paired with the specified default value and get its value ref.
    - convenient when when using hashmap to count key occurences, example:
     > `map.entry(some_key).or_insert(0) += 1`
+
+
+
+## Day 8
+1. Multiple char delimiters for `split` by providing the an array slice containing the char delimiters as the argument.
+2. `?` can actually be used on Options????!!!!!! What have I been missing :cry:. Clippy is a life-saver for beginners trying to learn to write more idiomatic Rust!
+3. When iterating over Results, other than `collect`ing (mentioned in Day 3), 2 other ways are:
+   1. ignore failed items with `filter_map`
+   2. collect all valid values and failures separately using `partition`
+4. Results can also be converted to Options using `or`.
