@@ -6,7 +6,7 @@ const FLOOR_SIZE: usize = 1000;
 struct Point(i16, i16);
 impl Point {
     fn from_str(s: &str) -> Result<Self, ()> {
-        let coordinates = s.split(",")
+        let coordinates = s.split(',')
             .map(|slice| slice.trim().parse::<i16>().map_err(|_| ()))
             .collect::<Result<Vec<_>, ()>>()?;
         if coordinates.len() != 2 { return Err(()); }
@@ -50,14 +50,16 @@ fn rasterize_line_seg(mut start: Point, mut end: Point) -> Vec<Point> {
     let points = start.0..=end.0;
 
     // Bresenham's Line Algorithm
+    let mut diff = -delta.0;
+    let mut y = start.1;
     let mut points = points
-        .scan((-delta.0, start.1), |(diff, y), x| {
-            if *diff >= 0 {
-                *y += delta.1.signum();
-                *diff -= 2*delta.0;
+        .map(|x| {
+            if diff >= 0 {
+                y += delta.1.signum();
+                diff -= 2*delta.0;
             }
-            *diff += 2*delta.1.abs();   // calculate diff for next point
-            Some(Point(x, *y))
+            diff += 2*delta.1.abs();   // calculate diff for next point
+            Point(x, y)
         })
         .collect::<Vec<Point>>();
 

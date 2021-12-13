@@ -79,7 +79,9 @@ Basically a record of any cool or important things I learnt about Rust, and any 
         - `[y=0, (0,0), D=-5] -> [y=2/5, (1,0), D=-5+4=-1] -> [y=4/5, (2,1), D=(-1+4)-10=-7] -> [y=6/5, (3,1), D=-7+4=-3] -> [y=8/5, (4,2), D=(-3+4)-10=-9] -> [y=2, (5,2), D=-9+4=-5]`
 
 4. `scan`
-    - similar to `map`, but it is seeded with an initial state, where the input closure can also use and operate on the state on each iteration
+    - similar to `map`, but it allows the use of an internal state
+    - the return value of the closure must be an Option, which is yielded by the resulting iterator
+    - it's nice to be able to keep the state internal, but the use-case just seems too niche
 
 
 
