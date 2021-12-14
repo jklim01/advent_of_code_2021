@@ -142,3 +142,15 @@ Basically a record of any cool or important things I learnt about Rust, and any 
    1. ignore failed items with `filter_map`
    2. collect all valid values and failures separately using `partition`
 4. Results can also be converted to Options using `or`.
+
+
+
+## Day 9:
+1. Idea: use a stack to find all points in a basin.
+2. First time I managed to accept and return iterators from a function!
+3. `product`, `sort`, `unstable_sort`
+4.  - `then`: `false` |-> `None`, `true` |-> `Some(f())`
+        - `and_then`: `None` |-> `None`, `Some(T)` |-> `f(T)` (`f` returns `Option`)
+        - `and_then`: `Err(e)` |-> `Err(e)`, `Ok(T)` |-> `f(T)` (`f` returns `Result`)
+        - similar to `map`, but avoids double layer if closure also returns `Option` or `Result`
+5. Tried benchmarking using Criterion.rs and `time {executable}` terminal command.
