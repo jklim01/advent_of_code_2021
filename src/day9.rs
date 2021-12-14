@@ -1,6 +1,3 @@
-// #![feature(test)]
-// extern crate test;
-
 use std::iter;
 use std::collections::HashSet;
 
@@ -112,25 +109,16 @@ pub fn day9_main(file_data: &str) -> (u16, u32) {
 
     // Part 2
     let basins = group_into_basins(&height_map);
-    let part2_answer: u32 = basins.iter()
-        .fold([0; 3], |mut top3, basin| {
-            let size = basin.len() as u32;
-            if size > top3[0] { top3[0] = size; }
-            top3.sort_unstable();
-            top3
-        })
-        .into_iter()
-        .product();
+    let mut basin_sizes = basins.iter().map(|basin| basin.len() as u32)
+        .collect::<Vec<_>>();
+    basin_sizes.sort_unstable();
+    let part2_answer: u32 = basin_sizes.iter().rev().take(3).product();
+
     // let basin_map = p2_first_try::BasinMap::from_height_map(&height_map);
-    // let part2_answer2 = basin_map.basins.values()
-    //     .fold([0; 3], |mut top3, basin| {
-    //         let size = basin.len() as u32;
-    //         if size > top3[0] { top3[0] = size; }
-    //         top3.sort_unstable();
-    //         top3
-    //     })
-    //     .into_iter()
-    //     .product();
+    // let mut basin_sizes = basin_map.basins.values()
+    //     .map(|basin| basin.len() as u32).collect::<Vec<_>>();
+    // basin_sizes.sort_unstable();
+    // let part2_answer2: u32 = basin_sizes.iter().rev().take(3).product();
     // if part2_answer2 != part2_answer { panic!("Part 2 answers don't match!"); }
     println!("[Part 2] The product is {}.", part2_answer);
 
@@ -139,6 +127,7 @@ pub fn day9_main(file_data: &str) -> (u16, u32) {
 
 
 #[allow(dead_code)]
+// pretty terrible lol, but might as well keep it since it's got some ideas I'm not used to
 mod p2_first_try {
     use std::collections::HashMap;
     use std::collections::BTreeSet;
