@@ -154,3 +154,13 @@ Basically a record of any cool or important things I learnt about Rust, and any 
         - `and_then`: `Err(e)` |-> `Err(e)`, `Ok(T)` |-> `f(T)` (`f` returns `Result`)
         - similar to `map`, but avoids double layer if closure also returns `Option` or `Result`
 5. Tried benchmarking using Criterion.rs and `time {executable}` terminal command.
+
+
+
+## Day 10:
+1. Wasted **WAY** too much time playing around with traits.
+    - soting requires `Ord`, which requires `PartialOrd` and  `Eq`
+    - `Eq` requires `PartialEq`, but doesn't need any new methods, so we can just add `#[derive(Eq)]` once `PartialEq` is implemented to inform that it is a (non-partial) equivalence relation
+    - arithmetic operators can be overloaded to operate on other types
+        - example: `impl std::ops::Mul<T> for Vector3<T>` defines scalar-vector multiplication (`c * [x, y, z]`, where `x, y, z, c: T`)
+2. `collect` collects the iterator elements using the `from_iter` method in the `FromIterator` trait. Thus, we can collect into our custom collections in our desired way by implementing the trait.
