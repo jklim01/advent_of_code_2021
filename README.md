@@ -17,6 +17,9 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 6](#day-6)
   - [Day 7](#day-7)
   - [Day 8](#day-8)
+  - [Day 9](#day-9)
+  - [Day 10](#day-10)
+  - [Day 11](#day-11)
 
 
 
@@ -145,7 +148,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 
 
-## Day 9:
+## Day 9
 1. Idea: use a stack to find all points in a basin.
 2. First time I managed to accept and return iterators from a function!
 3. `product`, `sort`, `unstable_sort`
@@ -157,10 +160,20 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 
 
-## Day 10:
+## Day 10
 1. Wasted **WAY** too much time playing around with traits.
     - soting requires `Ord`, which requires `PartialOrd` and  `Eq`
     - `Eq` requires `PartialEq`, but doesn't need any new methods, so we can just add `#[derive(Eq)]` once `PartialEq` is implemented to inform that it is a (non-partial) equivalence relation
     - arithmetic operators can be overloaded to operate on other types
         - example: `impl std::ops::Mul<T> for Vector3<T>` defines scalar-vector multiplication (`c * [x, y, z]`, where `x, y, z, c: T`)
 2. `collect` collects the iterator elements using the `from_iter` method in the `FromIterator` trait. Thus, we can collect into our custom collections in our desired way by implementing the trait.
+
+
+
+## Day 11
+1. `std::num::Wrapping<T>` can be used as a wrapper to perform intentionally-wrapped arithmetic on `T`.
+    - Used it to get the coordinates of the 8 neighbours of a `Point` in `get_neighbours`. This way, we can simply calculate the coordinates and avoid checking for many cases in the function. Although it doesn't feel very nice to have such a loose thread, the callee should check whether the coordinates is within the bounds anyway when indexing, so I supoose it's ok...
+2. `core::ops::{Index, IndexMut}` can be used to define a custom index into a collection.
+    - example: define `type Point = (usize, usize)` to index into `[[T]; SIZE]`
+3. Implemented `std::iter::FromIter` to `collect` into an array (`[[u8; SIZE]; SIZE]`).
+4. Implemented `std::str::FromStr`to `parse` into `OctopusGrid`.
