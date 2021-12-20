@@ -20,6 +20,8 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 9](#day-9)
   - [Day 10](#day-10)
   - [Day 11](#day-11)
+  - [Day 12](#day-12)
+  - [Day 13](#day-13)
 
 
 
@@ -140,22 +142,34 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 ## Day 8
 1. Multiple char delimiters for `split` by providing the an array slice containing the char delimiters as the argument.
+
 2. `?` can actually be used on Options????!!!!!! What have I been missing :cry:. Clippy is a life-saver for beginners trying to learn to write more idiomatic Rust!
+
 3. When iterating over Results, other than `collect`ing (mentioned in Day 3), 2 other ways are:
    1. ignore failed items with `filter_map`
    2. collect all valid values and failures separately using `partition`
+
 4. Results can also be converted to Options using `or`.
+
+5. Looking back now, using a hashset is probably more appropriate.
+    1. duplicate segments make no sense
+    2. `contains_digit` can be replaced with `is_superset`
+    3. `is_same_digit` can be replaced with `==`
 
 
 
 ## Day 9
 1. Idea: use a stack to find all points in a basin.
+
 2. First time I managed to accept and return iterators from a function!
+
 3. `product`, `sort`, `unstable_sort`
+
 4.  - `then`: `false` |-> `None`, `true` |-> `Some(f())`
         - `and_then`: `None` |-> `None`, `Some(T)` |-> `f(T)` (`f` returns `Option`)
         - `and_then`: `Err(e)` |-> `Err(e)`, `Ok(T)` |-> `f(T)` (`f` returns `Result`)
         - similar to `map`, but avoids double layer if closure also returns `Option` or `Result`
+
 5. Tried benchmarking using Criterion.rs and `time {executable}` terminal command.
 
 
@@ -173,7 +187,50 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 ## Day 11
 1. `std::num::Wrapping<T>` can be used as a wrapper to perform intentionally-wrapped arithmetic on `T`.
     - Used it to get the coordinates of the 8 neighbours of a `Point` in `get_neighbours`. This way, we can simply calculate the coordinates and avoid checking for many cases in the function. Although it doesn't feel very nice to have such a loose thread, the callee should check whether the coordinates is within the bounds anyway when indexing, so I supoose it's ok...
+
 2. `core::ops::{Index, IndexMut}` can be used to define a custom index into a collection.
     - example: define `type Point = (usize, usize)` to index into `[[T]; SIZE]`
+
 3. Implemented `std::iter::FromIter` to `collect` into an array (`[[u8; SIZE]; SIZE]`).
+
 4. Implemented `std::str::FromStr`to `parse` into `OctopusGrid`.
+
+
+
+## Day 12
+1. I'm pretty proud of the error handling of cave-parsing functionality. This is the first time I have defined a somewhat decent and complete Error myself. XD
+
+    - `ParseCaveError` returns different errors wrapping different data depending on the problem found.
+        - example: If the problem is with a particular node, `ParseCaveError` wraps the `ParseNodeError` together with the line number. I think it's pretty good first attempt of combining errors and gathering context.
+
+    - The errors I chose to go with also feel pretty natural, resulting in the handling of the errors at the callee end also being quite elegant in my beginner's opionion (check `day12_main` and `CaveMap`'s `from_str`).
+
+    - I also tested out some cool stuff like:
+        - `impl From<(usize, ParseNodeError)> for ParseCaveError` (because `ParseCaveError` can wrap `ParseNodeError`)
+        - `impl Error for ParseCaveError` with `source` function (in the case of `ParseCaveError::NodeError`, show the cause of the `ParseNodeError`)
+
+2. When doing graph traversal, we can push copies of the current traversed paths each appended with a different child node onto the data structure. This allows us to know the traversed path up to the visited node. (seems to have a huge memory requirement though :thinking:)
+
+3. Not sure how this compares with the method above in terms of performance, but I thought of a way that allows us to have the "context" of the current traversed path without having to store a copy of the context together with each node. This can be done by exploiting the pattern of how the context changes between successive pops. A "divider" is introduced to remind us when to update the context.
+
+    In the following example, we will take the traversed path to be the "context" and use a stack.
+
+    We only need 1 vector to store the traversed path. The stack will store 2 different items: one that tells us to visit a node (`NextNode`), and another (what we'll call a divider) that tells us to remove a node from the path (`StackDiv`). Upon popping
+    - `NextNode`: If end is found, handle it and `continue`. Otherwise, we will add the current node to the path vector, and push on a `StackDiv` before pushing its child nodes.
+    - `StackDiv` : This signifies that all child nodes of the last node currently in the path vector have been traversed, and we will be exploring its sibling nodes next. Thus, we need to update the context by removing the last node from the path vector.
+
+    Note that in recursion, the context would be implicitly updated when the function returns, where the stack frame is popped and we change to using the context in the following stack frame. The `StackDiv` method explicitly reminds us to update the context which is shared (uses the same variable) throughout the entire process. To be able to make the appropraite changes upon encountering this "reminder", there needs to be some pattern between the two contexts that `StackDiv` separates so that we know what to do. In the day 12 code, I used `StackDiv(Node)`, that when encountered, tells me that I can remove the record of visiting `Node` from `visited_small_caves` (the context).
+
+    To be honest though, I'm not sure how nicely this works with a queue. I think that in most situations, the "context" will be highly dependent on the path, which could change a lot between successive de-queues. Whereas when traversing using stacks, each `StackDiv` signifies only a one-node-change in the path. In such cases, the only method I've come up with is to have the dividers separate non-sibling nodes and to store the context to switch in the divider or a separate queue. However, this seems to be equivalent to the original situation, but with the graph depth reduced by 1.
+
+
+
+# Day 13
+1. Hashset provides many set-theoretic operations!
+    - union, intersection, difference, symmetric differnce (in one but not both)
+    - `is_disjoint`, `is_subset`, `is_superset`
+    - `==` overloaded to test for set equality (exact same set of elements)
+
+2. In string literals, we can escape the newline in strings with `\`. Placing `r` before any string literal can make it a raw string literal too.
+
+3. I think this is another nice example of defining, combining and handling errors.
