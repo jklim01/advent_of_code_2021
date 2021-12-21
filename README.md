@@ -22,6 +22,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 11](#day-11)
   - [Day 12](#day-12)
   - [Day 13](#day-13)
+  - [Day 14](#day-14)
 
 
 
@@ -234,3 +235,8 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 2. In string literals, we can escape the newline in strings with `\`. Placing `r` before any string literal can make it a raw string literal too.
 
 3. I think this is another nice example of defining, combining and handling errors.
+
+
+
+# Day 14
+1. If `std::str::FromStr` cannot be implemented due to the need of lifetime annotations, `std::convert::TryFrom` or `std::convert::From` can be used instead.
