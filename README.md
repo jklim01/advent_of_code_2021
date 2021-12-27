@@ -23,6 +23,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 12](#day-12)
   - [Day 13](#day-13)
   - [Day 14](#day-14)
+  - [Day 15](#day-15)
 
 
 
@@ -50,7 +51,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 2. `map_err`
     - maps `Result<T, E>` to  `Result<T, F>` by:
         - leave `Ok` variant untouched
-        - input closure: E -> F
+        - input closure: `E -> F`
 
 
 
@@ -187,7 +188,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 ## Day 11
 1. `std::num::Wrapping<T>` can be used as a wrapper to perform intentionally-wrapped arithmetic on `T`.
-    - Used it to get the coordinates of the 8 neighbours of a `Point` in `get_neighbours`. This way, we can simply calculate the coordinates and avoid checking for many cases in the function. Although it doesn't feel very nice to have such a loose thread, the callee should check whether the coordinates is within the bounds anyway when indexing, so I supoose it's ok...
+    - Used it to get the coordinates of the 8 neighbours of a `Point` in `get_neighbours`. This way, we can simply calculate the coordinates and avoid checking for many cases in the function. Although it doesn't feel very nice to have such a loose thread, the calleer should check whether the coordinates is within the bounds anyway when indexing, so I supoose it's ok...
 
 2. `core::ops::{Index, IndexMut}` can be used to define a custom index into a collection.
     - example: define `type Point = (usize, usize)` to index into `[[T]; SIZE]`
@@ -240,3 +241,103 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 # Day 14
 1. If `std::str::FromStr` cannot be implemented due to the need of lifetime annotations, `std::convert::TryFrom` or `std::convert::From` can be used instead.
+
+
+
+# Day 15
+1. Notation. Graph: `G(V, E)`, start and goal vertices: `s` and `t`, cost estimate (minimum cost found so far) of a vertex from `s` and `t`: `df` and `db`, true minimum cost between vertices: `δ`, previous vertex on the best found path to a vertex: `p`, edge weight: `w`
+
+    The notation is quite messy as I tried to include the ideas from many sources, but anyone who has spent enough time thinking about the problem would likely be able to understand it. Because I was mainly focused on creating a complete set of notes for convenient reference, most of the following will be almost an exact copy from the sources. I don't take credit for their work.
+
+    The following list of sources is **not** complete:
+    1. http://ai.stanford.edu/~nilsson/OnlinePubs-Nils/PublishedPapers/astar.pdf (good read, most complete explanation on A* I've read so far, it even proves it for multiple goal nodes)
+    2. https://www.cs.princeton.edu/courses/archive/spr06/cos423/Handouts/EPP%20shortest%20path%20algorithms.pdf
+    3. https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
+    4. Heuristic Search, theory and applications (Stefan Edelkamp and Stefan Schrödl)
+
+2. Dijkstra's Algorithm: finds the minimum cost path by finding the true cost of each vertex from `s` in ascending order, stopping when `t` is found
+    1. Create a priority queue `Q` where higher priority is given to vertices with shorter approximated distance `d` from `s`, and a hashmap `S` where the key is a vertex and the value is its `p` value.
+
+    2. Start by pushing all vertices into `Q` s.t. `d(x) = ∞, ∀ x ∈ Q`. Set `d(s) = 0` and repeat while `Q ≠ Ø`:
+        1. Pop `Q` to get some `v` with `(d(v), p(v))`. If `v = t`, trace backwards using `S` and return the path.
+        2. Add `v` with value `p(v)` to `S`.
+        3. For all `u ∈ v.neighbours`:
+            - If `u ∈ S`, skip to the next vertex.
+            - Calculate the cost `C` to get to `u` through `v`. If `C < d(u)`, update `d(u)` to `C` and its `p(u)` to `v`. This is called relaxing the edge `(v, u)`.
+
+    3. If we don't return by the time `Q = Ø`, then no path exists between `s` and `t`.
+
+    - Every vertex `x` can be in one the following states: unreached(`d(x) = ∞`), labeled (`x ∈ Q`), scanned (`x ∈ S`)
+
+    - If the priority queue uses a data structure that doesn't allow finding a certain element, we can externally store the current `d` value of each vertex, and push the same vertex but with an updated priority when we want to update its priority in `Q`. When a vertex that has been popped before is popped again, we will just ignore it.
+
+    - A more practical implementation is to only have vertices with non-infinite priority in `Q`.
+
+    - At any stage, for any `v ∈ Q`, `δ(s, v) > δ(s, u)` is guaranteed `∀ u ∈ S`. Proof:
+        1. Let `(r, v)` be the first relaxed edge s.t. `d(v) < d(u)` for some `u ∈ S`, where `d(r) = λ` at the time.
+        2. Then `d(r) < d(v) < d(u)`, and `d(r)` must have been set to `λ` before `u` entered `S`, otherwise the firts relaxation defined above is contradicted. So the order is
+            - `d(r)` set to `λ`
+            - `u` entered `S`
+            - `(r, v)` relaxed as `r` enters `S`
+        3. But the second step is impossible, since `d(r) < d(u)` and `r` must enter `S` before `u`
+
+    - Corollary: When a vertex `v` is scanned, the current `d(v)` is guaranteed to be the minimum cost from `s` to `v`, where the previous vertex on the path is the `src` vertex that is stored together.
+
+3. Bidirectional Dijkstra: attempts to reduce the search "area" by splitting the "radius" between 2 "circles" (since Dijkstra's searches outwards from `s` uniformly by cost, like a circle where all points are of uniform distance from its center)
+    - Perform Dijkstra starting from the start and goal vertices in parallel. Throughout the process, we keep track of the current found shortest distance between the endpoints, `μ`, and the edge `α = (u, v), u ∈ Sf, v ∈ Sb` that was used to find `μ`. `α`, `Sf` and `Sb` are used to construct the shortest path.
+
+    - Stopping Condition: In a certain iteration, `u` and `v` are popped from `Qf` and `Qb`, where `df(u) + db(v) > μ`
+        - Proof: Let's assume that there is a shorter path `P`, where the furthest the backwards search has scanned is up to `Y`, and its adjacent vertex in `P` towards the `s` direction is `X`. `X` cannot have been forward scanned as this would mean `μ` is already the cost of `P`. This means that `df(X) > df(u)` and `db(X) > db(v)` and `P.cost = df(X) + db(X) > μ`, giving a contradiction. A similar argument can be used to show that `μ` only needs to be updated when an edge `(u, v)` satisfying `u ∈ Sf, v ∈ Sb` is found, because even if we update `μ` when one of the vertices has yet to be scanned, both vertices are guaranteed to be scanned before the stopping condition if they are in the shortest path.
+
+4. A* search algorithm: Dijkstra traverses uniformly by cost across all "directions", A* incorporates heuristics to add bias to certain "directions"
+    - assume `G` has finite branching factor and `∃ ε > 0: ε ≤ w(e), ∀ e ∈ E`
+
+    - The heuristic function `h` estimates the cost from a vertex to `t`
+        - Admissible: `h(v) ≤ δ(v, t), ∀ v ∈ V`
+        - Consistent: `h(t) = 0` and `h(u) - h(v) ≤ w(u, v), ∀ (u, v) ∈ E`
+            - imagine adding edges `e1 = (u, t)`, `e2 = (v, t)` with weights `h(u)`, `h(v)`, then `(u, v)` is a detour which incurs extra cost (can see as `e1`, `e2`, `(u, v)` obeying 2 of the 3 triangle inequalities)
+            - Consistent => Admissible
+                - Proof: `h(v1) ≤ w(v1, v2) + h(v2)`, and repeatedly expand `h` on RHS by moving along the shortest path to `t`. Use `h(t) = 0` for special case of `v1 = t`.
+                - Intuiton: admissibility is a "global" notion of not overestimating, while consistency is "local"
+        - Monotonic: given any path `P = (v1, ..., vn)`, define `Pk = (v1, ..., vk), 1 ≤ k ≤ n`, then `(Pi.cost + h(vi)) ≤ (Pj.cost + h(vj)),  ∀ 1 ≤ i ≤ j ≤ n`
+            - the cost estimate of any path is non-decreasing as we move down the path
+            - Monotonic <=> Consistent (relatively easy to show by converting between their definition)
+
+    - `Q` prioritizes vertices with lower `d + h`, which is an estimate of the cost of the optimal path constrained to go through the vertex. The algorithm terminates when `t` is scanned, where `μ` is the true minimum cost.
+
+    - Summarizing the big ideas from the brilliant paper [1] (slightly modified):
+        - Lemma 1: For any unclosed vertex `v` and optimal path `P` from `s` to `v`, `∃ v' ∈ Q, P: d(v') = δ(v', t)`
+            - If `s` is open, the lemma is trivially true since `s` is available
+            - Let `u ∈ S` be the furthest vertex in `P` s.t. `d(u) =  δ(s, u)` (this always exists if `s` is closed since `s` satisfies it). Then its successor on `P` will be in `Q` and also have minimum `d` value.
+
+        - Corollary 1: If `h` is admissible and A* hasn't terminated, `∃ v ∈ Q, P: (d+h)(v) ≤ δ(s, t)`, where `P` is the optimal path
+            - By Lemma 1, there exists a vertex in `Q` and `P` with minimum `d` value. Using the fact that `h` is admissible, it can be seen that this vertex satisfies the condition.
+
+        - Theorem 1: If `h` is admissible, A* is admissible (terminates with the optimal solution if it exists).
+            - Case 1: no termination
+                - all vertices further than `(δ(s, t)/ε)` steps away from `s` will never be scanned by Corollary 1 (since such vertices have `d+h` value greater than `δ(s, t)`)
+                - the finite number of vertices within `(δ(s, t)/ε)` steps can only be reopened a finite number of times since there are a finite number of paths from `s` to it that passes through only vertices within `(δ(s, t)/ε)` steps (note that previous paths with loops would not even be considered)
+            - Case 2: terminating before finding the optimal path
+                - by Corollary 1, A* will not terminate by popping `t` with a sub-optimal path (cost higher than `δ(s, t)`) because there will always be a vertex on the optimal path that will be popped first
+
+        - Lemma 2: If `h` is consistent, `d(v) = δ(s, v), ∀ v ∈ S`.
+            - Suppose a vertex `v` is about to be closed without the optimal path `P` to it from `s` being found. By Lemma 1, there exists a vertex `u ∈ Q, P` with mnimum `d` value. `d(v) > δ(s, v) =  d(u) +  δ(u, v)`, `(d+h)(v) > d(u) + δ(u, v) + h(v)`, and by the consistency of `h`, `δ(u, v) + h(v) > h(u)`. Thus, `(d+h)(v) > (d+h)(u)`, contradicting the fact that `v` would be closed before the optimal path to it is found.
+
+        - Lemma 3: If `h` is consistent, the priority of `Q` is nondecreasing.
+            - Let `n` be the next node to be closed after `m`. If the optimal path to `n` does not pass through `m`, then the lemma is trivially true because `n` would be in `Q` when `m` was popped, requiring `(d+h)(m) ≤ (d+h)(n)`. Otherwise, by lemma 2, `m` and `n` have achieved minimum `d`, and `(d+h)(n) = δ(s, m) + w(m, n) + h(n) ≥ δ(s, m) + h(m) = (d+h)(m)`.
+
+        - Corollary 2: If `h` is consistent and A* has yet to terminate, `(d+h)(v) ≤ δ(s, t),  ∀ v ∈ S`.
+
+        - Summary of optimality proof (since I'm not completely sure of my understanding of the paper):
+            - Given a graph where no two distinct vertices have the same `d+h` and consistent `h`, it can be shown that any admissible algorithm that is no more informed than A* must scan all vertices scanned by A*. We use the fact that A* scans all non-goal vertices satisfying `(d+v)(v) < δ(s, t)` (by Lemma 3 and no ties allowed), and that we can construct a graph for which an algorithm will be inadmissible if it doesn't scan all of such vertices. (see def of "no more informed" in the paper, I don't really understand it well enough to explain)
+            - Let `L` be the set of vertices scanned by a no more informed, admissible algorithm A using the same consistent `h` as A*. If it exists, the first vertex `v ∉ L` that A* scans must satisfy `(d+h)(v) = δ(s, t)` (otherwise A is inadmissible by the previous argument). Since the vertex `v'` that Corollary 1 states exists was not chosen, it means that `(d+h)(v') = δ(s, t)`. Thus, we can modify the tie-breaking rule to ensure `v` is not scanned. Repeating the procedure gives us an A* algorithm that doesn't scan any more vertices than A, and that there always exists such an A* algorithm which doesn't do worse than A when using the same consistent `h`.
+            - Under the above premises, any A* algorithm satisfies `N(A*) ≤ N(A) + R(A*)`, where `N` is the number of scanned vertices and `R` is the number of critical ties (ie a pair of vertices `v, v': (d+h)(v) = (d+h)(v') = δ(s, t)`). This is because all non-critical tie vertices scanned by A* must be scanned by A for A to be admisible, and the only chance for A to have lower `N` is for A* to be "unlucky" in handling the critical ties. In most situations, `R` is not likely to be large as the critical ties likely only occur close to `t`, where `h` should be a pretty good estimator (by admissibility).
+
+    - It is not hard to see that A* with a consistent heuristic `h` is almost equivalent to Dijkstra using modified edge weights `w'(u, v) = w(u, v) - h(u) + h(v)`. Consistency guarantees non-negative edge weights, and the priority of all vertices in `Q` relative to each other is the same because all are just added by a constant `-h(s)`. Consequently, the shortest-cost path is also unchanged because the cost of all paths from `s` to `t` are just added by `h(t) - h(s) = -h(s)`. Thus, it can be seen that A* using a consistent `h` is optimal and complete, and the nice properties of consistency proven above are easily seen to be true.
+
+5. Tried `std::collections::BinaryHeap`, which is a max-heap but we can use a custom `Ord` implementation to change the ordering of elements.
+    - when objects are wrapped with `std::cmp::Reverse`, their order during comparisons are reversed
+
+6. `wrapping_add`, `wrapping_sub` exists (also with signed versions)
+
+7. When using vectors instead of arrays to store a grid, we can flatten the grid to a 1D vector to ensure contiguous memory.
