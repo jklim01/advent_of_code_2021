@@ -1,10 +1,3 @@
-# advent_of_code_2021
-My attempt of Advent of Code 2021. I'm also using this oppurtunity to pick up Rust.
-
-Hope to get 50 stars by the 25th :P.
-
-
-
 # Highlights
 Basically a record of any cool or important things I learnt about Rust, and any algorithms or derivations that I found or discovered myself along the way.
 
@@ -24,13 +17,14 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 13](#day-13)
   - [Day 14](#day-14)
   - [Day 15](#day-15)
+  - [Day 16](#day-16)
 
-
+---
 
 ## Day 1
 1. Self-implemented Iterators
 
-
+---
 
 ## Day 3
 1. `ok_or_else`
@@ -43,7 +37,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - when applying higher-order functions on iterators, if the `Err` or `None` variant is returned by the closure, it can be "collected" out
     -  convenient when you want to stop and immediately return from a function, but cannot return because the `Err` or `None` variant is found inside the closure (the process terminates once `Err` is found)
 
-
+---
 
 ## Day 4
 1. mutate collections in place by chaining `iter_mut` and `for_each`
@@ -53,7 +47,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
         - leave `Ok` variant untouched
         - input closure: `E -> F`
 
-
+---
 
 ## Day 5
 1. Operator Overloading
@@ -90,7 +84,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - the return value of the closure must be an Option, which is yielded by the resulting iterator
     - it's nice to be able to keep the state internal, but the use-case just seems too niche
 
-
+---
 
 ## Day 6
 1. `append` appends another vector to the end of the current vector
@@ -101,7 +95,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 4. Alternatively, just `reserve` and `push`.
 
-
+---
 
 ## Day 7
 1. Part 1: Minimize `f(x) = Σ |x - x`<sub>i</sub>`|`
@@ -140,7 +134,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
    - convenient when when using hashmap to count key occurences, example:
     > `map.entry(some_key).or_insert(0) += 1`
 
-
+---
 
 ## Day 8
 1. Multiple char delimiters for `split` by providing the an array slice containing the char delimiters as the argument.
@@ -158,7 +152,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     2. `contains_digit` can be replaced with `is_superset`
     3. `is_same_digit` can be replaced with `==`
 
-
+---
 
 ## Day 9
 1. Idea: use a stack to find all points in a basin.
@@ -174,7 +168,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 5. Tried benchmarking using Criterion.rs and `time {executable}` terminal command.
 
-
+---
 
 ## Day 10
 1. Wasted **WAY** too much time playing around with traits.
@@ -184,7 +178,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
         - example: `impl std::ops::Mul<T> for Vector3<T>` defines scalar-vector multiplication (`c * [x, y, z]`, where `x, y, z, c: T`)
 2. `collect` collects the iterator elements using the `from_iter` method in the `FromIterator` trait. Thus, we can collect into our custom collections in our desired way by implementing the trait.
 
-
+---
 
 ## Day 11
 1. `std::num::Wrapping<T>` can be used as a wrapper to perform intentionally-wrapped arithmetic on `T`.
@@ -195,9 +189,9 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 3. Implemented `std::iter::FromIter` to `collect` into an array (`[[u8; SIZE]; SIZE]`).
 
-4. Implemented `std::str::FromStr`to `parse` into `OctopusGrid`.
+4. Implemented `std::str::FromStr` to `parse` into `OctopusGrid`.
 
-
+---
 
 ## Day 12
 1. I'm pretty proud of the error handling of cave-parsing functionality. This is the first time I have defined a somewhat decent and complete Error myself. XD
@@ -225,9 +219,9 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
     To be honest though, I'm not sure how nicely this works with a queue. I think that in most situations, the "context" will be highly dependent on the path, which could change a lot between successive de-queues. Whereas when traversing using stacks, each `StackDiv` signifies only a one-node-change in the path. In such cases, the only method I've come up with is to have the dividers separate non-sibling nodes and to store the context to switch in the divider or a separate queue. However, this seems to be equivalent to the original situation, but with the graph depth reduced by 1.
 
+---
 
-
-# Day 13
+## Day 13
 1. Hashset provides many set-theoretic operations!
     - union, intersection, difference, symmetric differnce (in one but not both)
     - `is_disjoint`, `is_subset`, `is_superset`
@@ -237,25 +231,25 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 3. I think this is another nice example of defining, combining and handling errors.
 
+---
 
-
-# Day 14
+## Day 14
 1. If `std::str::FromStr` cannot be implemented due to the need of lifetime annotations, `std::convert::TryFrom` or `std::convert::From` can be used instead.
 
+---
 
-
-# Day 15
+## Day 15
 1. Notation. Graph: `G(V, E)`, start and goal vertices: `s` and `t`, cost estimate (minimum cost found so far) of a vertex from `s` and `t`: `df` and `db`, true minimum cost between vertices: `δ`, previous vertex on the best found path to a vertex: `p`, edge weight: `w`
 
-    The notation is quite messy as I tried to include the ideas from many sources, but anyone who has spent enough time thinking about the problem would likely be able to understand it. Because I was mainly focused on creating a complete set of notes for convenient reference, most of the following will be almost an exact copy from the sources. I don't take credit for their work.
+    The notation is quite messy as I tried to include the ideas from many sources. Since I was mainly focused on creating a complete set of notes for convenient reference, most of the following will be almost an exact copy from the sources. I don't take credit for their work.
 
     The following list of sources is **not** complete:
-    1. http://ai.stanford.edu/~nilsson/OnlinePubs-Nils/PublishedPapers/astar.pdf (good read, most complete explanation on A* I've read so far, it even proves it for multiple goal nodes)
-    2. https://www.cs.princeton.edu/courses/archive/spr06/cos423/Handouts/EPP%20shortest%20path%20algorithms.pdf
-    3. https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
-    4. Heuristic Search, theory and applications (Stefan Edelkamp and Stefan Schrödl)
+    1. http://ai.stanford.edu/~nilsson/OnlinePubs-Nils/PublishedPapers/astar.pdf (good read, most complete explanation on A* I've read so far, it even proves it for multiple goal vertices)
+    2. Bi-Directional and Heuristic Search in Path Problems (Ira Pohl)
+    3. Bidirectional Search Reconsidered, Kaindl and Kanz
+    4. https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
 
-2. Dijkstra's Algorithm: finds the minimum cost path by finding the true cost of each vertex from `s` in ascending order, stopping when `t` is found
+2. Dijkstra's Algorithm: finds the minimum cost path by finding the minimum cost of each vertex from `s` in ascending order, stopping when `t` is found
     1. Create a priority queue `Q` where higher priority is given to vertices with shorter approximated distance `d` from `s`, and a hashmap `S` where the key is a vertex and the value is its `p` value.
 
     2. Start by pushing all vertices into `Q` s.t. `d(x) = ∞, ∀ x ∈ Q`. Set `d(s) = 0` and repeat while `Q ≠ Ø`:
@@ -289,19 +283,21 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - Stopping Condition: In a certain iteration, `u` and `v` are popped from `Qf` and `Qb`, where `df(u) + db(v) > μ`
         - Proof: Let's assume that there is a shorter path `P`, where the furthest the backwards search has scanned is up to `Y`, and its adjacent vertex in `P` towards the `s` direction is `X`. `X` cannot have been forward scanned as this would mean `μ` is already the cost of `P`. This means that `df(X) > df(u)` and `db(X) > db(v)` and `P.cost = df(X) + db(X) > μ`, giving a contradiction. A similar argument can be used to show that `μ` only needs to be updated when an edge `(u, v)` satisfying `u ∈ Sf, v ∈ Sb` is found, because even if we update `μ` when one of the vertices has yet to be scanned, both vertices are guaranteed to be scanned before the stopping condition if they are in the shortest path.
 
+    - Instead of popping `Qf` and `Qb` symmetrically (pop 1 element off each queue at each iteration), [2] shows that given no a priori information about the structure of `G`, choosing to pop the queue with smaller cardinality at each iteration is statistically better.
+
 4. A* search algorithm: Dijkstra traverses uniformly by cost across all "directions", A* incorporates heuristics to add bias to certain "directions"
     - assume `G` has finite branching factor and `∃ ε > 0: ε ≤ w(e), ∀ e ∈ E`
 
     - The heuristic function `h` estimates the cost from a vertex to `t`
         - Admissible: `h(v) ≤ δ(v, t), ∀ v ∈ V`
         - Consistent: `h(t) = 0` and `h(u) - h(v) ≤ w(u, v), ∀ (u, v) ∈ E`
-            - imagine adding edges `e1 = (u, t)`, `e2 = (v, t)` with weights `h(u)`, `h(v)`, then `(u, v)` is a detour which incurs extra cost (can see as `e1`, `e2`, `(u, v)` obeying 2 of the 3 triangle inequalities)
+            - imagine adding edges `e1 = (u, t)`, `e2 = (v, t)` with weights `h(u)`, `h(v)`, then passing through`(u, v)` & `e2` is a detour compared to `e1`, and cannot be of lower cost (can see as `e1`, `e2`, `(u, v)` obeying 2 of the 3 triangle inequalities)
             - Consistent => Admissible
-                - Proof: `h(v1) ≤ w(v1, v2) + h(v2)`, and repeatedly expand `h` on RHS by moving along the shortest path to `t`. Use `h(t) = 0` for special case of `v1 = t`.
+                - Proof: `h(v1) ≤ w(v1, v2) + h(v2)`, and repeatedly expand `h` on RHS by moving backwards along the shortest path to `t`. Use `h(t) = 0` for special case of `v1 = t`.
                 - Intuiton: admissibility is a "global" notion of not overestimating, while consistency is "local"
         - Monotonic: given any path `P = (v1, ..., vn)`, define `Pk = (v1, ..., vk), 1 ≤ k ≤ n`, then `(Pi.cost + h(vi)) ≤ (Pj.cost + h(vj)),  ∀ 1 ≤ i ≤ j ≤ n`
             - the cost estimate of any path is non-decreasing as we move down the path
-            - Monotonic <=> Consistent (relatively easy to show by converting between their definition)
+            - Monotonic <=> Consistent (relatively easy to show by converting between their definitions)
 
     - `Q` prioritizes vertices with lower `d + h`, which is an estimate of the cost of the optimal path constrained to go through the vertex. The algorithm terminates when `t` is scanned, where `μ` is the true minimum cost.
 
@@ -324,7 +320,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
             - Suppose a vertex `v` is about to be closed without the optimal path `P` to it from `s` being found. By Lemma 1, there exists a vertex `u ∈ Q, P` with mnimum `d` value. `d(v) > δ(s, v) =  d(u) +  δ(u, v)`, `(d+h)(v) > d(u) + δ(u, v) + h(v)`, and by the consistency of `h`, `δ(u, v) + h(v) > h(u)`. Thus, `(d+h)(v) > (d+h)(u)`, contradicting the fact that `v` would be closed before the optimal path to it is found.
 
         - Lemma 3: If `h` is consistent, the priority of `Q` is nondecreasing.
-            - Let `n` be the next node to be closed after `m`. If the optimal path to `n` does not pass through `m`, then the lemma is trivially true because `n` would be in `Q` when `m` was popped, requiring `(d+h)(m) ≤ (d+h)(n)`. Otherwise, by lemma 2, `m` and `n` have achieved minimum `d`, and `(d+h)(n) = δ(s, m) + w(m, n) + h(n) ≥ δ(s, m) + h(m) = (d+h)(m)`.
+            - Let `n` be the next vertex to be closed after `m`. If the optimal path to `n` does not pass through `m`, then the lemma is trivially true because `n` would be in `Q` when `m` was popped, requiring `(d+h)(m) ≤ (d+h)(n)`. Otherwise, by lemma 2, `m` and `n` have achieved minimum `d`, and `(d+h)(n) = δ(s, m) + w(m, n) + h(n) ≥ δ(s, m) + h(m) = (d+h)(m)`.
 
         - Corollary 2: If `h` is consistent and A* has yet to terminate, `(d+h)(v) ≤ δ(s, t),  ∀ v ∈ S`.
 
@@ -333,11 +329,30 @@ Basically a record of any cool or important things I learnt about Rust, and any 
             - Let `L` be the set of vertices scanned by a no more informed, admissible algorithm A using the same consistent `h` as A*. If it exists, the first vertex `v ∉ L` that A* scans must satisfy `(d+h)(v) = δ(s, t)` (otherwise A is inadmissible by the previous argument). Since the vertex `v'` that Corollary 1 states exists was not chosen, it means that `(d+h)(v') = δ(s, t)`. Thus, we can modify the tie-breaking rule to ensure `v` is not scanned. Repeating the procedure gives us an A* algorithm that doesn't scan any more vertices than A, and that there always exists such an A* algorithm which doesn't do worse than A when using the same consistent `h`.
             - Under the above premises, any A* algorithm satisfies `N(A*) ≤ N(A) + R(A*)`, where `N` is the number of scanned vertices and `R` is the number of critical ties (ie a pair of vertices `v, v': (d+h)(v) = (d+h)(v') = δ(s, t)`). This is because all non-critical tie vertices scanned by A* must be scanned by A for A to be admisible, and the only chance for A to have lower `N` is for A* to be "unlucky" in handling the critical ties. In most situations, `R` is not likely to be large as the critical ties likely only occur close to `t`, where `h` should be a pretty good estimator (by admissibility).
 
-    - It is not hard to see that A* with a consistent heuristic `h` is almost equivalent to Dijkstra using modified edge weights `w'(u, v) = w(u, v) - h(u) + h(v)`. Consistency guarantees non-negative edge weights, and the priority of all vertices in `Q` relative to each other is the same because all are just added by a constant `-h(s)`. Consequently, the shortest-cost path is also unchanged because the cost of all paths from `s` to `t` are just added by `h(t) - h(s) = -h(s)`. Thus, it can be seen that A* using a consistent `h` is optimal and complete, and the nice properties of consistency proven above are easily seen to be true.
+    - It can shown that given admissible `h1` and `h2`, if `h1` dominates `h2` (i.e. `h2(v) ≤ h1(v), ∀ v ∈ V`), then A* using `h1` expands no more vertices than when using `h2`.
 
-5. Tried `std::collections::BinaryHeap`, which is a max-heap but we can use a custom `Ord` implementation to change the ordering of elements.
+    - It is not hard to see that A* with a consistent heuristic `h` is practically equivalent to Dijkstra using modified edge weights `w'(u, v) = w(u, v) - h(u) + h(v)`. Consistency guarantees non-negative edge weights, and the priority of all vertices in `Q` relative to each other is the same because all are just added by a constant `-h(s)`. Consequently, the shortest-cost path is also unchanged because the cost of all paths from `s` to `t` are just added by `h(t) - h(s) = -h(s)`. Thus, it can be seen that A* using a consistent `h` is optimal and complete, and the nice properties of consistency proven above are easily seen to be inherited from Dijkstra's algorithm.
+
+5. Bidirectional Heuristic Search:
+    - Assuming `hf` and `hb` are consistent, the stopping condition is: in a certain iteration, `max(priority(Qf) , priority(Qb)) ≥ μ`.
+        - Proof: WLOG, suppose that `priority(Qf) ≥ μ` caused the termination. By consistency, the `d+h` value of any popped vertex is at least the cost of the shortest path which is constrained to pass through that vertex. Combining this with the guarantee of consistency that the priority of `Qf` is nondecreasing, any later popped vertex in `Qf` cannot be part of a shorter path. Lastly, `Qb` cannot uncover any shorter path because any later found path would have also been uncovered by `Qf` after the stopping criteria, and it has been shown above that such a path cannot be shorter.
+
+    -  Of course, if the heuristics are consistent, implementing bidirectional A* by viewing it as bidirectional Dijkstra with modified edge weights will also work. However, we need the heuristics to also be balanced, ie the modified edge weights between two fixed vertices using `hf` and `hb` must be the same: `w(u, v) + hf(u) - hf(v) = w(u, v) + hb(v) - hb(u)`. Thus, the required condition is `(hf+hb)(v) = constant c`.
+        - Just implement A* on both sides, and pay extra attention to ensure that `df`, `db`, `hf`, `hb` have the correct interpretation. Then the termination condition is just: `priority(Qf) + priority(Qb) ≥ μ + c` (`c` is from above).
+
+    - ADD-BAA [3] attempts to make the stoppig condition be satisfied ealier by dynamically improving the heuristic. Let `hf` be consistent, `DIFF_f(v) = δ(v, t) - hf(v)`, and `MinDIFF_f = min (DIFF_f(v), v ∈ Sb)`. It can be shown given the optimal path P from `v` to `t`, `DIFF_f` is non-increasing as we move along the path; and that `Hf(v) = hf(v) + MinDiff_f, v ∉ Sb` is admissible (and consistent due to being no smaller than `hf`). Since this is a constant offset, the order between elements in the priority queues are unchanged, and we only need to apply this offset when evaluating the stopping condition.
+
+    - These are just the simpler implementations and it seems like there is still no clear answer on which are better in general.
+
+6. Tried `std::collections::BinaryHeap`, which is a max-heap but we can use a custom `Ord` implementation to change the ordering of elements.
     - when objects are wrapped with `std::cmp::Reverse`, their order during comparisons are reversed
 
-6. `wrapping_add`, `wrapping_sub` exists (also with signed versions)
+7. `wrapping_add`, `wrapping_sub` exists (also with signed versions)
 
-7. When using vectors instead of arrays to store a grid, we can flatten the grid to a 1D vector to ensure contiguous memory.
+8. When using vectors instead of arrays to store a grid, we can flatten the grid to a 1D vector to ensure contiguous memory.
+
+9. Use `then` on a boolean to map it to an Option. This was used in the `get_neighbours` function when doing bounds checking. (much better than just allowing overflow and underflow like in previous days)
+
+---
+
+# Day 16

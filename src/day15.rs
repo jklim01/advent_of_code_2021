@@ -5,6 +5,7 @@ use std::error::Error;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
+
 const SIZE: usize = 100;
 const MIN_RISK: u16 = 1;
 
@@ -12,8 +13,6 @@ const MIN_RISK: u16 = 1;
 struct Point(usize, usize);
 impl Point {
     fn get_neighbours(&self, grid_size: Point) -> [Option<Point>; 4] {
-        // ignores over- or under- flow, passing the bounds checking responsibility to the caller
-
         let up = (self.0 > 0).then(|| Point(self.0-1, self.1));
         let down = (self.0 < grid_size.0-1).then(|| Point(self.0+1, self.1));
         let left = (self.1 > 0).then(|| Point(self.0, self.1-1));
@@ -132,11 +131,10 @@ impl CavernMap {
         });
         let mut run_count = 0;
         while let Some(elem) = pqueue.pop() {
-            run_count += 1;
-            if elem.pos == end { println!("run_count = {}", run_count); return Ok(min_costs[elem.pos]); }
+            if elem.pos == end { return Ok(min_costs[elem.pos]); }
 
             // don't bother anymore if an even cheaper path to elem.pos has already been found
-            if min_costs[elem.pos].is_none() || min_costs[elem.pos].unwrap() < elem.cost { continue; }
+            if min_costs[elem.pos].unwrap() < elem.cost { continue; }
 
             for p in elem.pos.get_neighbours(self.size) {
                 if p.is_none() { continue; }
@@ -169,6 +167,7 @@ impl CavernMap {
         min_costs[end] = (None, Some(self[end] as u16));
 
         let mut mu = None;
+        let mu_offset = estimate_cost(start, end);
         let mut forward_q = BinaryHeap::new();
         let mut backward_q = BinaryHeap::new();
         forward_q.push(PQueueElem {
@@ -180,7 +179,7 @@ impl CavernMap {
 
         while let (Some(u), Some(v)) = (forward_q.pop(), backward_q.pop()) {
             if let Some(d) = mu {
-                if u.cost + v.cost > d { return Ok(mu); }
+                if u.cost + v.cost > d + mu_offset { return Ok(mu); }
             }
 
             if !(min_costs[u.pos].0.unwrap() < u.cost) {
@@ -218,92 +217,6 @@ impl CavernMap {
 
                         // update mu as required
                         if let (Some(x), Some(y)) = min_costs[p] {
-                            let new_mu = x + y - (self[p] as u16);
-                            if mu.is_none() || new_mu < mu.unwrap() {
-                                mu = Some(new_mu)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Ok(mu)
-    }
-
-    fn bidirectional_dijkstra(&self, start: Point, end: Point) -> Result<Option<u16>, ()> {
-        let is_in_bounds = |p: Point| -> bool {
-            p.0 < self.size.0 && p.1 < self.size.1
-        };
-        if !is_in_bounds(start) || !is_in_bounds(end) { return Err(()); }
-
-        let estimate_cost = |p1: Point, p2:Point| -> u16 {
-            // use manhattan distance (modified to prevent overestimation) as heuristic cost estimate
-            MIN_RISK * (my_abs_diff(p1.0, p2.0) + my_abs_diff(p1.1, p2.1)) as u16
-            // 0 as u16
-        };
-
-        let mut min_costs = Grid::new(self.size, (None, None, false, false));
-        min_costs[start] = (Some(0), None, true, false);
-        min_costs[end] = (None, Some(self[end] as u16), false, true);
-
-        let mut mu = None;
-        let mut forward_q = BinaryHeap::new();
-        let mut backward_q = BinaryHeap::new();
-        forward_q.push(PQueueElem {
-            hcost: estimate_cost(start, end), cost: 0, pos: start
-        });
-        backward_q.push(PQueueElem {
-            hcost: (self[end] as u16) + estimate_cost(end, start), cost: (self[end] as u16), pos: end
-        });
-        let mut flag = false;
-        let mut run_count = 0;
-
-        while let (Some(u), Some(v)) = (forward_q.pop(), backward_q.pop()) {
-            run_count += 2;
-            if let Some(d) = mu {
-                if u.cost + v.cost > d { println!("run_count = {}", run_count); return Ok(mu); }
-            }
-            min_costs[u.pos].2 = true;
-            min_costs[v.pos].3 = true;
-            if flag == true { println!("Continues processing even after a double processed node was found!"); }
-            if min_costs[u.pos].3 == true { println!("Found a double processed node!"); flag = true; }
-            if min_costs[v.pos].2 == true { println!("Found a double processed node!"); flag = true; }
-
-            if !(min_costs[u.pos].0.unwrap() < u.cost) {
-                for p in u.pos.get_neighbours(self.size) {
-                    if p.is_none() { continue; }
-                    let p = p.unwrap();
-                    let new_cost = u.cost + self[p] as u16;
-                    if min_costs[p].0.is_none() || new_cost < min_costs[p].0.unwrap() {
-                        min_costs[p].0 = Some(new_cost);
-                        forward_q.push(PQueueElem {
-                            hcost: new_cost + estimate_cost(p, end), cost: new_cost, pos: p
-                        });
-
-                        // update mu as required
-                        if let (Some(x), Some(y), _, _) = min_costs[p] {
-                            let new_mu = x + y - (self[p] as u16);
-                            if mu.is_none() || new_mu < mu.unwrap() {
-                                mu = Some(new_mu)
-                            }
-                        }
-                    }
-                }
-            }
-
-            if !(min_costs[v.pos].1.unwrap() < v.cost) {
-                for p in v.pos.get_neighbours(self.size) {
-                    if p.is_none() { continue; }
-                    let p = p.unwrap();
-                    let new_cost = v.cost + self[p] as u16;
-                    if min_costs[p].1.is_none() || new_cost < min_costs[p].1.unwrap() {
-                        min_costs[p].1 = Some(new_cost);
-                        backward_q.push(PQueueElem {
-                            hcost: new_cost + estimate_cost(start, p), cost: new_cost, pos: p
-                        });
-
-                        // update mu as required
-                        if let (Some(x), Some(y), _, _) = min_costs[p] {
                             let new_mu = x + y - (self[p] as u16);
                             if mu.is_none() || new_mu < mu.unwrap() {
                                 mu = Some(new_mu)
@@ -346,36 +259,6 @@ pub fn day15_main(file_data: &str) -> (Option<u16>, Option<u16>) {
         Some(x) => println!("[Part 2] The lowest total risk possible is {}.", x),
         None => println!("[Part 2] Could not find any path connecting the endpoints."),
     }
-
-    // Test
-    let test1 = cavern;
-    println!("--- Starting test.....................................................");
-    let test1_ans1 = test1.find_min_risk(Point(71, 29), Point(79, 51)).unwrap().unwrap();
-    println!("--- Completed test 1.1 with {}", test1_ans1);
-
-    println!("--- Starting test..........");
-    let test1_ans2 = test1.find_min_risk(Point(53, 29), Point(20, 75)).unwrap().unwrap();
-    println!("--- Completed test 1.2 with {}", test1_ans2);
-
-
-    let test2 = test1.expand_map();
-    println!("--- Starting test..........");
-    let test2_ans1 = test2.find_min_risk(Point(233, 366), Point(250, 287)).unwrap().unwrap();
-    println!("--- Completed test 2.1 with {}", test2_ans1);
-
-    println!("--- Starting test..........");
-    let test2_ans2 = test2.find_min_risk(Point(332, 419), Point(109, 451)).unwrap().unwrap();
-    println!("--- Completed test 2.2 with {}", test2_ans2);
-
-
-    let test3 = test2.expand_map();
-    println!("--- Starting test..........");
-    let test3_ans1 = test3.find_min_risk(Point(1738, 1251), Point(1993, 1800)).unwrap().unwrap();
-    println!("--- Completed test 3.1 with {}", test3_ans1);
-
-    println!("--- Starting test..........");
-    let test3_ans2 = test3.find_min_risk(Point(1093, 2152), Point(2460, 1648)).unwrap().unwrap();
-    println!("--- Completed test 3.2 with {}", test3_ans2);
 
     (part1_answer, part2_answer)
 }
