@@ -244,7 +244,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     The notation is quite messy as I tried to include the ideas from many sources. Since I was mainly focused on creating a complete set of notes for convenient reference, most of the following will be almost an exact copy from the sources. I don't take credit for their work.
 
     The following list of sources is **not** complete:
-    1. http://ai.stanford.edu/~nilsson/OnlinePubs-Nils/PublishedPapers/astar.pdf (good read, most complete explanation on A* I've read so far, it even proves it for multiple goal vertices)
+    1. http://ai.stanford.edu/~nilsson/OnlinePubs-Nils/PublishedPapers/astar.pdf (good read, most complete explanation on A* I've read so far, it even proves it for multiple goal vertices, the pdf is included in the root)
     2. Bi-Directional and Heuristic Search in Path Problems (Ira Pohl)
     3. Bidirectional Search Reconsidered, Kaindl and Kanz
     4. https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
@@ -356,3 +356,16 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 ---
 
 # Day 16
+1. `matches!` works using `match`, so the same basic patterns used in `match` can also be used.
+
+2.  `RangeInclusive<char>` exists!
+    - useful for stuff like `'A'..='Z'` or hexadecimal check `'0'..='9' | 'A'..='F'`
+
+3. Round-up integer division for `a / b`: `1 + (a-1)/b`
+    - careful of `a = 0` for unsigned integers
+    - `(a+b-1)/b` works but has the possibility for overflow
+
+4. `std::panic::catch_unwind` catches panics inside a closure, returning a `std::thread::Result<T>`, ie `Result<T, Box<dyn Any + Send + 'static>>`.
+    - Note: `assert!` invokes `panic!` and thus can be caught
+
+5. Use `as_ptr` on `&str` to directly get the `u8` pointer. This can be used for pointer comparisons of string slices instead of string comparisons.
