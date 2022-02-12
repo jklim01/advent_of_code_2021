@@ -18,6 +18,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 14](#day-14)
   - [Day 15](#day-15)
   - [Day 16](#day-16)
+  - [Day 17](#day-17)
 
 ---
 
@@ -176,6 +177,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - `Eq` requires `PartialEq`, but doesn't need any new methods, so we can just add `#[derive(Eq)]` once `PartialEq` is implemented to inform that it is a (non-partial) equivalence relation
     - arithmetic operators can be overloaded to operate on other types
         - example: `impl std::ops::Mul<T> for Vector3<T>` defines scalar-vector multiplication (`c * [x, y, z]`, where `x, y, z, c: T`)
+
 2. `collect` collects the iterator elements using the `from_iter` method in the `FromIterator` trait. Thus, we can collect into our custom collections in our desired way by implementing the trait.
 
 ---
@@ -261,9 +263,9 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
     3. If we don't return by the time `Q = Ø`, then no path exists between `s` and `t`.
 
-    - Every vertex `x` can be in one the following states: unreached(`d(x) = ∞`), labeled (`x ∈ Q`), scanned (`x ∈ S`)
+    - Every vertex `x` can be in one the following states: unreached (`d(x) = ∞`), labeled (`x ∈ Q`), scanned (`x ∈ S`)
 
-    - If the priority queue uses a data structure that doesn't allow finding a certain element, we can externally store the current `d` value of each vertex, and push the same vertex but with an updated priority when we want to update its priority in `Q`. When a vertex that has been popped before is popped again, we will just ignore it.
+    - If the priority queue uses a data structure that doesn't allow querying or updating specific elements, we can externally store the current `d` value of each vertex, and push the same vertex but with an updated priority when we want to update its priority in `Q`. When a vertex that has been popped before is popped again, we will just ignore it.
 
     - A more practical implementation is to only have vertices with non-infinite priority in `Q`.
 
@@ -337,12 +339,14 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - Assuming `hf` and `hb` are consistent, the stopping condition is: in a certain iteration, `max(priority(Qf) , priority(Qb)) ≥ μ`.
         - Proof: WLOG, suppose that `priority(Qf) ≥ μ` caused the termination. By consistency, the `d+h` value of any popped vertex is at least the cost of the shortest path which is constrained to pass through that vertex. Combining this with the guarantee of consistency that the priority of `Qf` is nondecreasing, any later popped vertex in `Qf` cannot be part of a shorter path. Lastly, `Qb` cannot uncover any shorter path because any later found path would have also been uncovered by `Qf` after the stopping criteria, and it has been shown above that such a path cannot be shorter.
 
-    -  Of course, if the heuristics are consistent, implementing bidirectional A* by viewing it as bidirectional Dijkstra with modified edge weights will also work. However, we need the heuristics to also be balanced, ie the modified edge weights between two fixed vertices using `hf` and `hb` must be the same: `w(u, v) + hf(u) - hf(v) = w(u, v) + hb(v) - hb(u)`. Thus, the required condition is `(hf+hb)(v) = constant c`.
+    -  In the case where the heuristics are also balanced (consistency is still required), implementing bidirectional A* by viewing it as bidirectional Dijkstra with modified edge weights will also work. Balanced means that the modified edge weights between two fixed vertices using either heuristic is the same: `w(u, v) + hf(u) - hf(v) = w(u, v) + hb(v) - hb(u)`. Thus, the required condition is `(hf+hb)(v) = constant c`.
         - Just implement A* on both sides, and pay extra attention to ensure that `df`, `db`, `hf`, `hb` have the correct interpretation. Then the termination condition is just: `priority(Qf) + priority(Qb) ≥ μ + c` (`c` is from above).
 
-    - ADD-BAA [3] attempts to make the stoppig condition be satisfied ealier by dynamically improving the heuristic. Let `hf` be consistent, `DIFF_f(v) = δ(v, t) - hf(v)`, and `MinDIFF_f = min (DIFF_f(v), v ∈ Sb)`. It can be shown given the optimal path P from `v` to `t`, `DIFF_f` is non-increasing as we move along the path; and that `Hf(v) = hf(v) + MinDiff_f, v ∉ Sb` is admissible (and consistent due to being no smaller than `hf`). Since this is a constant offset, the order between elements in the priority queues are unchanged, and we only need to apply this offset when evaluating the stopping condition.
+    - ADD-BAA [3] attempts to make the stopping condition be satisfied ealier by dynamically improving the heuristic. Let `hf` be consistent, `DIFF_f(v) = δ(v, t) - hf(v)`, and `MinDIFF_f = min (DIFF_f(v), v ∈ Sb)`. It can be shown given the optimal path P from `v` to `t`, `DIFF_f` is non-increasing as we move along the path; and that `Hf(v) = hf(v) + MinDiff_f, v ∉ Sb` is admissible (and consistent due to being no smaller than `hf`). Since this is a constant offset, the order between elements in the priority queues are unchanged, and we only need to apply this offset when evaluating the stopping condition.
 
-    - These are just the simpler implementations and it seems like there is still no clear answer on which are better in general.
+    - These are just the simpler implementations and there are much more complex ones.
+        - example: exploiting heuristic inaccuracies, meet in the middle (or some fraction of the optimal path), more complex dynamic heuristics, contraction hierarchies, improved algorithm and termination condition (for example "A new bidirectional search algorithm with shortened postprocessing"), ...
+    - Furthermore, it seems like there is still no clear answer on which bidirectional heuristic search algorithm is better in general.
 
 6. Tried `std::collections::BinaryHeap`, which is a max-heap but we can use a custom `Ord` implementation to change the ordering of elements.
     - when objects are wrapped with `std::cmp::Reverse`, their order during comparisons are reversed
@@ -369,3 +373,8 @@ Basically a record of any cool or important things I learnt about Rust, and any 
     - Note: `assert!` invokes `panic!` and thus can be caught
 
 5. Use `as_ptr` on `&str` to directly get the `u8` pointer. This can be used for pointer comparisons of string slices instead of string comparisons.
+
+---
+
+# Day 17
+1. `min`, `max`, `clamp` in `std::cmp` (default implementations for the functions provided in `trait Ord`)
