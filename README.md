@@ -19,6 +19,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 15](#day-15)
   - [Day 16](#day-16)
   - [Day 17](#day-17)
+  - [Day 18](#day-18)
 
 ---
 
@@ -346,6 +347,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
     - These are just the simpler implementations and there are much more complex ones.
         - example: exploiting heuristic inaccuracies, meet in the middle (or some fraction of the optimal path), more complex dynamic heuristics, contraction hierarchies, improved algorithm and termination condition (for example "A new bidirectional search algorithm with shortened postprocessing"), ...
+
     - Furthermore, it seems like there is still no clear answer on which bidirectional heuristic search algorithm is better in general.
 
 6. Tried `std::collections::BinaryHeap`, which is a max-heap but we can use a custom `Ord` implementation to change the ordering of elements.
@@ -378,3 +380,12 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 
 # Day 17
 1. `min`, `max`, `clamp` in `std::cmp` (default implementations for the functions provided in `trait Ord`)
+
+---
+
+# Day 18
+1. `unreachable!` can be used to mark unreachable code points. If it is ever reached, the program will panic and print the provided formatted message.
+
+2. This is the first time I parsed the puzzle input with the help of a tokenizer. `SnailfishTokenStream` lazily parses the internal string slice into tokens. After trying the usual method and refactoring to this version, I can really see how it makes the code simpler and more flexible to change. The same goes for the returned parse errors. Seeing that even my toy version which only handles numbers and one type of brace with simple rules is this complex makes me really amazed at what IDEs and compilers can do.
+
+3. Probably the most "fun" one so far. All the required skills are just barely within reach, and it was sufficiently challenging without leaving me feeling completely helpless. It was particularly satisfying when I thought to refactor the code to parse using a tokenizer, and when I figured out how to explode `SnailfishNumber`s using recursion.
