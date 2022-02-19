@@ -11,6 +11,9 @@ rand = "0.8.4"
 [dev-dependencies]
 criterion = "0.3"
 
+# [profile.release]
+# debug = true
+
 [[bench]]
 name = "d9p2_bench"
 harness = false

@@ -64,17 +64,17 @@ Basically a record of any cool or important things I learnt about Rust, and any 
         2. The x coordinates is ascending from the start to the end. This can easily be satisfied by swapping the endpoints as neccesary.
 
     - Intuition:<br/>
-        Denote the exact value of the line's y component at the ith x coordinate by `yi`. This increases by `Dy/Dx` each time. The ith point chosen by the algorithm has the form `(xi, (yi)')`.
+        Denote the exact value of the line's y component at the ith x coordinate by `y`<sub>`i`</sub>. This increases by `Dy/Dx` each time. Denonte the ith point chosen by the algorithm `(x`<sub>`i`</sub>`, y`<sub>`i`</sub><sup>`'`</sup>`)`.
 
-        Since the slope magnitude is at most 1, at the ith x coordinate, we only need to determine whether `(yi)'` will increment w.r.t `(y(i-1))'`, or stay the same. This is determined by checking which point `yi` is closer to,  which boils down to the criteria `[yi - (y(i-1))'] ≥ 0.5`.
+        Since the slope magnitude is at most 1, at the ith x coordinate, we only need to determine whether `y`<sub>`i`</sub><sup>`'`</sup> will increment w.r.t `y`<sub>`i-1`</sub><sup>`'`</sup>, or stay the same. This is determined by checking which point `yi` is closer to, which boils down to the criteria `(y`<sub>`i`</sub>` - y`<sub>`i-1`</sub><sup>`'`</sup>`) ≥ 0.5`.
 
-        But we know that `[yi - (y(i-1))']` has the form `p/Dx`. We can also eaily derive how `p` changes at each step, giving us a way to track the desired ratio `p/Dx` only using integers. Finally, since `p/Dx ≥ 0.5` is equivalent to `2p-Dx ≥ 0`, it is possible to avoid floating-point arithmetic altogether!
+        But we know that `(y`<sub>`i`</sub>` - y`<sub>`i-1`</sub><sup>`'`</sup>`)` has the form `p/Dx`, where the changes to `p` at each step can be easily derived, giving us a way to track the desired ratio `p/Dx` only using integers. Finally, since `p/Dx ≥ 0.5` is equivalent to `2p-Dx ≥ 0`, it is possible to avoid floating-point arithmetic altogether!
 
     - Algorithm: let `D = 2p - Dx`
         1. Intially, let `p = 0` and choose the starting point as the first point.
         2. Repeat for all remaining x coordinates:
-            1. increment `p` by `Dy.signum()`, and set `(yi)' = (y(i-1))'`
-            2. if `D ≥ 0`, decrement `p` by `Dx`, and `(yi)' += by Dy.signum()`
+            1. increment `p` by `Dy`, and set `y`<sub>`i`</sub><sup>`'`</sup>` = y`<sub>`i-1`</sub><sup>`'`</sup>
+            2. if `D ≥ 0`, decrement `p` by `Dx`, and `y`<sub>`i`</sub><sup>`'`</sup>` += Dy.signum()`
 
         Even better, instead of keeping track of `p` to calculate `D` at each step, just calculate the initial `D` and apply the relevant changes to `D` at each step!
 
@@ -84,7 +84,7 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 4. `scan`
     - similar to `map`, but it allows the use of an internal state
     - the return value of the closure must be an Option, which is yielded by the resulting iterator
-    - it's nice to be able to keep the state internal, but the use-case just seems too niche
+    - it's nice to be able to keep the state internal, but it doesn't seem to be flexible enough to fit many use-case
 
 ---
 
@@ -100,24 +100,24 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 ---
 
 ## Day 7
-1. Part 1: Minimize `f(x) = Σ |x - x`<sub>i</sub>`|`
-    - By the linearity of the derivative and observing the graph of the absolute value function, it can be thought that each crab contributes a value of `-1` and `1` to the slope of f to its left and right. Thus, `f` is continuous (sum of continuous functions) and linear between the kinks at points where there are crabs.
+1. Part 1: Minimize `f(x) = Σ |x - x`<sub>i</sub>`|, x ∈ ℤ`
+    - To simplify analysis we will extend the function domain to the reals. By the linearity of the derivative and observing the graph of the absolute value function, it can be thought that each crab contributes a value of `-1` and `1` to the slope of f to its left and right. Thus, `f` is continuous (sum of continuous functions) and linear between the kinks at points where there are crabs.
 
-    - This tells us that `f` always increases as we move away from the "minimum zone", which occurs where the slope changes sign or is zero. Where the latter case exists, the minimum zone is a closed interval (which looks like `\_/`. Otherwise it is just a kink where the slope directly changes from positive to negative ( which looks like `\/`). It can be seen that this zone always contains the median.
+    - This tells us that `f` always increases as we move away from the "minimum zone", which occurs where the slope changes sign or is zero. Where the latter case exists, the minimum zone is a closed interval (which looks like `\_/`). Otherwise it is just a kink where the slope directly changes from positive to negative ( which looks like `\/`). It can be seen that this zone always contains the median (think of the median position as the point where the number of crabs to the left and right is most balanced and use the intuiton above of how each crab contributes to the slope of f to its left and right).
 
     - tldr: Use a BTreeMap to store the the number of crabs at each position. Iterating from the smallest to largest position, given that `P` crabs have been seen (including the current position), the slope of f to the right of the current position is `2P-n`. The minimum zone starts from the first non-negative value found and ends at the first positive value found.
 
-2. Part 2: Minimize `f(x) = Σ(x - x`<sub>i</sub>`)`<sup>2</sup>` + Σ|x - x`<sub>i</sub>`|`
+2. Part 2: Minimize `f(x) = Σ(x - x`<sub>i</sub>`)`<sup>2</sup>` + Σ|x - x`<sub>i</sub>`|, x ∈ ℤ`
     - Using  `x`<sup>2</sup>` ≫ x` approximation, the solution will be the mean. However, I don't like to live that dangerously :zany_face:, so let's have a closer look.
 
-    - Lucky for us, the first term is smooth (quadratic), while the second term is the same as in part 1. Again, since we are restricted to integer points and `f` is continuous, we will start by searching for points where the slope changes sign (for convenience, let's say sign is `+ve`, `0` or `-ve`).
+    - Lucky for us, the first term is smooth (quadratic), while the second term is the same as in part 1. Again, since we are restricted to integer points and `f` (with its domain extended to the reals) is continuous, we will start by searching for points where the slope changes sign (for convenience, let's say sign is `+ve`, `0` or `-ve`).
 
     - Using calculus and knowledge from part 1, we can show the following:
         > Denote `S = Σ x`<sub>i</sub>. Given a point `x` with `K(x)` crabs, and `L(x)` crabs to its left,  <br/>
         > `f'(x)`<sup>-</sup>` = 2nx - 2S + 2L(x)-n` <br/>
         > `f'(x)`<sup>+</sup>` = 2nx - 2S + 2[L(x)+K(x)]-n` <br/>
 
-    - Thus, the interval of interest is `I = [ supremum(X`<sub>1</sub>`),  infimum(X`<sub>2</sub>`) ]` (and yes I had to search for these 2 words), where (`M` is the mean position):
+    - Thus, the interval of interest (ie the interval with minimum `f` value) is `I = [ supremum(X`<sub>1</sub>`),  infimum(X`<sub>2</sub>`) ]` (and yes I had to search for these 2 words), where (`M` is the mean position):
         1. `X`<sub>1</sub>` = Region of -ve slope = { x | x < M + 0.5 - L(x)/n }`
         2. `X`<sub>2</sub>` = Region of +ve slope = { x | x > M + 0.5 - [L(x)+K(x)]/n }`
 
@@ -131,6 +131,8 @@ Basically a record of any cool or important things I learnt about Rust, and any 
         Finally, it is not hard to convince yourself that checking `⌈ M ⌉`, `⌊ M ⌋` and the next closest integer to `M` is sufficient to cover all cases, and that I have wasted a whole day thinking about this :rofl:.
 
     - tldr: check the positions `M.round() - 1`, `M.round()`, `M.round() + 1`
+
+    - After thinking about this problem more, I think it is possible to use the fact that the former quadratic term quickly overwhelms the the latter term to derive that `M.round()` is straightup the answer. By playing around with the expressions I suspect that this is highly possible, but I can't seem to pin it down in a formal way, so I'll just leave it like this for now :rofl:.
 
 3. Use `entry(key).or_insert(default_val)` to either get ref to the existing value at the key, or insert the key paired with the specified default value and get its value ref.
    - convenient when when using hashmap to count key occurences, example:
@@ -386,6 +388,6 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 # Day 18
 1. `unreachable!` can be used to mark unreachable code points. If it is ever reached, the program will panic and print the provided formatted message.
 
-2. This is the first time I parsed the puzzle input with the help of a tokenizer. `SnailfishTokenStream` lazily parses the internal string slice into tokens. After trying the usual method and refactoring to this version, I can really see how it makes the code simpler and more flexible to change. The same goes for the returned parse errors. Seeing that even my toy version which only handles numbers and one type of brace with simple rules is this complex makes me really amazed at what IDEs and compilers can do.
+2. This is the first time I parsed the puzzle input with the help of a tokenizer. `SnailfishTokenStream` lazily tokenizes the internal string slice. After trying the usual method and refactoring to this version, I can really see how it makes the code simpler and more flexible to change. The same goes for the returned parse errors. Seeing that even my toy version which only handles numbers and one type of brace with simple rules is this complex makes me really amazed at what IDEs and compilers can do.
 
 3. Probably the most "fun" one so far. All the required skills are just barely within reach, and it was sufficiently challenging without leaving me feeling completely helpless. It was particularly satisfying when I thought to refactor the code to parse using a tokenizer, and when I figured out how to explode `SnailfishNumber`s using recursion.
