@@ -20,6 +20,9 @@ Basically a record of any cool or important things I learnt about Rust, and any 
   - [Day 16](#day-16)
   - [Day 17](#day-17)
   - [Day 18](#day-18)
+  - [Day 19](#day-19)
+  - [Day 20](#day-20)
+  - [Day 21](#day-21)
 
 ---
 
@@ -391,3 +394,26 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 2. This is the first time I parsed the puzzle input with the help of a tokenizer. `SnailfishTokenStream` lazily tokenizes the internal string slice. After trying the usual method and refactoring to this version, I can really see how it makes the code simpler and more flexible to change. The same goes for the returned parse errors. Seeing that even my toy version which only handles numbers and one type of brace with simple rules is this complex makes me really amazed at what IDEs and compilers can do.
 
 3. Probably the most "fun" one so far. All the required skills are just barely within reach, and it was sufficiently challenging without leaving me feeling completely helpless. It was particularly satisfying when I thought to refactor the code to parse using a tokenizer, and when I figured out how to explode `SnailfishNumber`s using recursion.
+
+---
+
+# Day 20
+1. It is possible to iterate through all 24 orientations in 3D arising from 90-degree rotations. Defining `roll`, `turn`, `turn_rev` as positive, positive and negative 90-degree rotations about the x, z and z axis respectively, by succesively applying the operations `[roll, turn, turn, turn, roll, turn_rev, turn_rev, turn_rev].iter().cycle().take(24)`, we can iterate through all the orientations.
+    - I don't know if there is a shorter sequence that can accomplish the same goal (the one above has length 8)
+    - this is actually Flying_Banana's answer in https://stackoverflow.com/questions/16452383/how-to-get-all-24-rotations-of-a-3-dimensional-array
+
+---
+
+# Day 20
+1. When getting an element from a `Vec`, we can use `get(<idx>)` as a drop-in replacement of `iter().nth(<idx>)`.
+
+2. `checked_sub` returns an `Option` where an overflow gives the `None` variant. There exist similar functions for the other operations.
+
+3. I'm pretty happy with my solution. We have to get all pixels within the 3x3 block around each pixel, and use the padding pixel if any pixel is out of bounds.
+    - sweep the block from left to right so that the previous pixels can be reused by shifting
+    - we have to do direct bounds checking on indices that could be "negative", but we can directly use `get` to do bounds checking on indices that are guaranteed to be positive, which is a minor optimization since `get` already does the bounds checking for us (note that this does not work for the former case since `usize` is unsigned)
+
+---
+
+# Day 21
+1.
