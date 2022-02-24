@@ -410,10 +410,11 @@ Basically a record of any cool or important things I learnt about Rust, and any 
 2. `checked_sub` returns an `Option` where an overflow gives the `None` variant. There exist similar functions for the other operations.
 
 3. I'm pretty happy with my solution. We have to get all pixels within the 3x3 block around each pixel, and use the padding pixel if any pixel is out of bounds.
-    - sweep the block from left to right so that the previous pixels can be reused by shifting
+    - sweep the block from left to right so that the previous pixels can be reused by shifting and masking
     - we have to do direct bounds checking on indices that could be "negative", but we can directly use `get` to do bounds checking on indices that are guaranteed to be positive, which is a minor optimization since `get` already does the bounds checking for us (note that this does not work for the former case since `usize` is unsigned)
 
 ---
 
 # Day 21
-1.
+1. When exploring down a node with many branches, one way to decrease the number of explored branches is to extract the information that is used in each branch and don't visit branches that give the same information. We can instead keep a count on each path to say how many actual distict paths would have ended up in the exact same state.
+    - example: `roll_values` iterates over `(roll_value, occurences)` so that we don't have to revisit reorderings of triple dice rolls which will all land us in the same state in the end
